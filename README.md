@@ -1,10 +1,10 @@
-# 🧬 LIMS Architecture Overview (MVP – Microbiology‑Focused)
+# LIMS Architecture Overview (MVP – Microbiology‑Focused)
 
 A modular, scalable Laboratory Information Management System (LIMS) built with a **Sample‑centric core**, surrounded by independent modules connected through **join tables** and a universal **traceability system**.
 
 ---
 
-## 🧱 1. Core Architecture Principles
+## 1. Core Architecture Principles
 
 - **Sample is the heart** of the system  
 - **Modules are independent** and connect via join tables  
@@ -17,13 +17,13 @@ A modular, scalable Laboratory Information Management System (LIMS) built with a
 
 ---
 
-# 🧩 2. Modules Overview
+# 2. Modules Overview
 
 Below are the modules defined for the MVP, each with a short description.
 
 ---
 
-## 🔥 Core Module (Sample Domain)
+## Core Module (Sample Domain)
 
 The heart of the system. Everything revolves around the sample.
 
@@ -41,7 +41,7 @@ Everything else connects *to* the sample.
 
 ---
 
-## 🧪 Assays Module
+## Assays Module
 
 Defines what tests can be performed on a sample.
 
@@ -56,7 +56,7 @@ Allows flexible test definitions and dynamic result structures.
 
 ---
 
-## 🧬 Results Module
+## Results Module
 
 Handles all result data, independent of assay complexity.
 
@@ -71,7 +71,7 @@ Supports simple and complex assays with unlimited result fields.
 
 ---
 
-## 🔧 Instruments & Equipment Module
+## Instruments & Equipment Module
 
 ### **Tables**
 - `instruments` — devices used in testing  
@@ -83,7 +83,7 @@ Tracks instrument usage, calibration, and compliance.
 
 ---
 
-## 🧴 Reagents & Consumables Module
+## Reagents & Consumables Module
 
 ### **Tables**
 - `reagents` — chemicals, media, consumables  
