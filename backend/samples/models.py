@@ -5,11 +5,12 @@ from django.contrib.auth.models import User
 
 class Client(models.Model):
     name = models.CharField('Cliente', max_length=100)
-    nit = models.CharField('NIT', max_length=100)
+    nit = models.CharField('NIT', max_length=100, unique=True)
     address = models.CharField('Dirección', max_length=100)
     contact_person = models.CharField('Contacto', max_length=100)
     email = models.CharField('Correo electrónico', max_length=50)
     phone = models.CharField('Teléfono', max_length=20)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = 'Cliente'
@@ -32,6 +33,15 @@ class SampleCategory(models.Model):
     
     def __str__(self):
         return self.name
+    
+
+SAMPLE_STATUS = [
+    ('RECEIVED', 'Recibido'),
+    ('TESTING', 'En análisis'),
+    ('REVISION', 'En revisión'),
+    ('APPROVAL', 'En  aprobación'),
+    ('ENDED', 'Finalizado'),
+]
 
 
 class Sample(models.Model):
@@ -41,11 +51,12 @@ class Sample(models.Model):
     sample_type = models.ForeignKey(SampleCategory, on_delete=models.CASCADE, related_name='samples')
     manufacturing_date = models.DateField('Fecha de fabricación')
     expiration_date = models.DateField('Fecha de vencimiento')
-    description = models.CharField('Descripción', max_length=500)
+    description = models.TextField('Descripción')
     quantity = models.CharField('Cantidad de muestra', max_length=100)
-    observations = models.CharField('Observaciones', max_length=500)
+    observations = models.TextField('Observaciones')
     received_date = models.DateTimeField(auto_now_add=True)
-
+    status = models.CharField('Estado', choices=SAMPLE_STATUS, default='RECEIVED', max_length=25)    
+    is_active = models.BooleanField(default=True)
     class Meta:
         verbose_name = 'Muestra'
         verbose_name_plural = 'Muestras'
