@@ -12,9 +12,10 @@ class ClientViewSet(viewsets.ViewSet):
     """
     This view will get the entire Client endpoint for the frontend
     api/clients
-    api/clients/<id>
+    api/clients/int:<id>
     for GET, POST< PUT/PATCH and DELETE operations
     """
+
     # it gives the GET method
     def list(self, request):
         # get only active clients

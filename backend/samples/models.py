@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 class Client(models.Model):
-    name = models.CharField('Cliente', max_length=100)
+    name = models.CharField('Cliente', max_length=100,  unique=True)
     nit = models.CharField('NIT', max_length=100, unique=True)
     address = models.CharField('Dirección', max_length=100)
     contact_person = models.CharField('Contacto', max_length=100)
@@ -39,7 +39,7 @@ SAMPLE_STATUS = [
     ('RECEIVED', 'Recibido'),
     ('TESTING', 'En análisis'),
     ('REVISION', 'En revisión'),
-    ('APPROVAL', 'En  aprobación'),
+    ('APPROVAL', 'En aprobación'),
     ('ENDED', 'Finalizado'),
 ]
 
@@ -57,6 +57,7 @@ class Sample(models.Model):
     received_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField('Estado', choices=SAMPLE_STATUS, default='RECEIVED', max_length=25)    
     is_active = models.BooleanField(default=True)
+    
     class Meta:
         verbose_name = 'Muestra'
         verbose_name_plural = 'Muestras'
@@ -68,7 +69,7 @@ class Sample(models.Model):
 class SampleTraceability(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name='traceability_logs')
     user_responsible = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions_logged')
-    event = models.CharField('Evento', max_length=100)
+    event = models.TextField('Evento')
     time = models.DateTimeField('Hora', auto_now_add=True)
 
     class Meta:
