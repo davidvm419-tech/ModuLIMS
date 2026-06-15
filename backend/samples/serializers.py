@@ -48,8 +48,6 @@ class SampleTraceabilitySerializer(serializers.ModelSerializer):
 
 
 class SampleSerializer(serializers.ModelSerializer):
-    # Get the traceability data into the serializer for that sample
-    traceability_logs = SampleTraceabilitySerializer(many=True, read_only=True)    
     class Meta:
         model = Sample
         fields = '__all__'
