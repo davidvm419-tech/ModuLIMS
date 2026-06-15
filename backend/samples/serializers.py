@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Client, SampleCategory, Sample, SampleTraceability
+from .models import Client, SampleType, Sample, SampleTraceability
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -23,12 +23,22 @@ class ClientSerializer(serializers.ModelSerializer):
         return super().to_internal_value(clean_data)
             
 
-
-
-class SampleCategorySerializer(serializers.ModelSerializer):
+class SampleTypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SampleCategory
+        model = SampleType
         fields = '__all__'
+
+    def to_internal_value(self, data):
+        '''
+        cleans the data to avoid multiple names of the same sample type and white spaces.
+        '''
+        clean_data = data.copy()
+
+        for key, value in clean_data.items():
+            if isinstance(value, str):
+                clean_data[key] = value.strip().upper()
+
+        return super().to_internal_value(clean_data)
 
 
 class SampleTraceabilitySerializer(serializers.ModelSerializer):
@@ -43,5 +53,16 @@ class SampleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sample
         fields = '__all__'
-        # DRF will allow this data to nt be send into the backend, soo the logic can be added in that moment
+        # DRF will allow this data to not be send into the backend, so the logic can be added in that moment
         read_only_fields = ['code', 'received_date']
+
+    def to_internal_value(self, data):
+        '''
+        cleans the data to avoid white spaces on the data.
+        '''
+        clean_data = data.copy()
+
+        for key, value in clean_data.items():
+            if isinstance(value, str):
+                clean_data[key] = value.strip() 
+        return super().to_internal_value(clean_data)  

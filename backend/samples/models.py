@@ -21,15 +21,16 @@ class Client(models.Model):
 
 
 
-class SampleCategory(models.Model):
+class SampleType(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    code_prefix = models.CharField(max_length=10, unique=True)
+    prefix = models.CharField(max_length=10, unique=True)
+    is_active = models.BooleanField(default=True)
 
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Categoria de muestra'
-        verbose_name_plural = 'Categoria de muestras'
+        verbose_name = 'Tipo de muestra'
+        verbose_name_plural = 'Tipo de muestras'
     
     def __str__(self):
         return self.name
@@ -48,7 +49,7 @@ class Sample(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='samples')
     code = models.CharField('código', max_length=50, blank=True, unique=True)
     name = models.CharField('Nombre', max_length=100)
-    sample_type = models.ForeignKey(SampleCategory, on_delete=models.CASCADE, related_name='samples')
+    type = models.ForeignKey(SampleType, on_delete=models.CASCADE, related_name='samples')
     manufacturing_date = models.DateField('Fecha de fabricación')
     expiration_date = models.DateField('Fecha de vencimiento')
     description = models.TextField('Descripción')
