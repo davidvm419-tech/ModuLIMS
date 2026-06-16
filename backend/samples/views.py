@@ -263,7 +263,7 @@ class SampleViewSet(viewsets.ViewSet):
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"Modificación de muestra: {traceability_log.strip()}",
+                        event = f"Modificación de muestra: {traceability_log.strip().upper()}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -305,7 +305,7 @@ class SampleViewSet(viewsets.ViewSet):
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"Modificación de muestra: {traceability_log.strip()}",
+                        event = f"Modificación de muestra: {traceability_log.strip().upper()}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -345,7 +345,7 @@ class SampleViewSet(viewsets.ViewSet):
                 SampleTraceability.objects.create(
                     sample = sample,
                     user_responsible = request.user,
-                    event = f"Inactivación de muestra: {traceability_log.strip()}",
+                    event = f"Inactivación de muestra: {traceability_log.strip().upper()}",
                 )
 
                 return Response(
@@ -367,10 +367,19 @@ class SampleTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
     for GET operations, editing and deleting is forbidden.
     """
     permission_classes = [IsAuthenticated]
+    queryset = SampleTraceability.objects.all().order_by('-event_date')
+    serializer_class = SampleTraceabilitySerializer 
 
-    def retrieve(self, request, pk=None):
-        queryset = SampleTraceability.objects.all()
-        sample_traceability = get_object_or_404(queryset, pk=pk)
-        serializer = SampleTraceability(sample_traceability)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        """
+        The read only view set gives the  predefined methods,
+        here we get data by sample id thanks to that inheritance.
+        """
+        queryset = super().get_queryset()
+        sample_id = self.request.query_params.get('sample_id')
+
+        if sample_id is not None:
+            queryset = queryset.filter(sample=sample_id)
+
+        return queryset       
     

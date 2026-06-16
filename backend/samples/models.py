@@ -71,8 +71,8 @@ class SampleTraceability(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name='traceability_logs')
     user_responsible = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions_logged')
     event = models.TextField('Evento')
-    time = models.DateTimeField('Hora', auto_now_add=True)
+    event_date = models.DateTimeField('Fecha', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Trazabilidad de la muestra'
-        ordering = ['-time']
+        ordering = ['-event_date']

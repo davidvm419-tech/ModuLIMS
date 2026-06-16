@@ -62,5 +62,6 @@ class SampleSerializer(serializers.ModelSerializer):
 
         for key, value in clean_data.items():
             if isinstance(value, str):
-                clean_data[key] = value.strip() 
+                clean_data[key] = value.strip().upper() 
+                
         return super().to_internal_value(clean_data)  

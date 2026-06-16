@@ -19,7 +19,7 @@ router.register(r'sample-types', SampleTypeViewSet, basename='sample-type')
 router.register(r'samples', SampleViewSet, basename='sample')
 
 # samples traceability urls
-router.register(r'traceability', SampleTraceabilityViewSet, basename='sample')
+router.register(r'traceability', SampleTraceabilityViewSet, basename='traceability')
 
 urlpatterns = [
     path('', include(router.urls)),
