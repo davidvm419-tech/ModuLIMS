@@ -13,6 +13,7 @@ class Client(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'Cliente'
         verbose_name_plural = 'Clientes'
 
@@ -60,6 +61,7 @@ class Sample(models.Model):
     is_active = models.BooleanField(default=True)
     
     class Meta:
+        ordering = ['-received_date']
         verbose_name = 'Muestra'
         verbose_name_plural = 'Muestras'
 
@@ -74,5 +76,5 @@ class SampleTraceability(models.Model):
     event_date = models.DateTimeField('Fecha', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'Trazabilidad de la muestra'
         ordering = ['-event_date']
+        verbose_name = 'Trazabilidad de la muestra'

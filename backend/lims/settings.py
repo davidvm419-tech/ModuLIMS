@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     
     # apps
     'samples',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -152,9 +153,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-
+# DRF configuration
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 20
 }

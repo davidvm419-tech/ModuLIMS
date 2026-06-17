@@ -4,171 +4,107 @@ from django.utils import timezone
 from lims.constants import events_dict
 from samples.models import Client, SampleType, Sample, SampleTraceability
 from samples.serializers import ClientSerializer, SampleTypeSerializer, SampleSerializer, SampleTraceabilitySerializer   
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status, viewsets   
+   
 
 
 STANDARD_ERROR_MESSAGE = 'Se requiere de una justificación para modificar la muestra.'
 
 # view sets hide the underlying implementation of  CRUD details
-class ClientViewSet(viewsets.ViewSet):
+class ClientViewSet(viewsets.ModelViewSet):
     """
     This view will get the entire Client endpoint for the frontend
-    api/clients
-    api/clients/int:<id>
-    for GET, POST PUT/PATCH and DELETE operations
+    GET  /api/clients/ (list)
+    POST /api/clients/ (create)
+    GET  /api/clients/<int:id>/ (retrieve)
+    PUT  /api/clients/<int:id>/ (update)
+    PATCH /api/clients/<int:id>/ (partial_update)
+    DELETE /api/clients/<int:id>/ (destroy)
+    ModelViewSet hides the logic of list, create, retrieve, update, partial_update
+    and destroy unless you override them or create a custom one.
     """
     permission_classes = [IsAuthenticated]
-
-    # it gives the GET method
-    def list(self, request):
-        # get only active clients
-        queryset = Client.objects.filter(is_active=True).order_by('name')
-        serializer = ClientSerializer(queryset, many=True)
-        # best practice to send the status code like this
-        return Response(serializer.data, status=status.HTTP_200_OK)   
-
-    # it gives the POST method
-    def create(self, request):
-        serializer = ClientSerializer(data=request.data)
-
-        # Django runs valid data behind the scenes
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    # it gives the GET method for some specific data
-    def retrieve(self, request, pk=None):
-        queryset = Client.objects.filter(is_active=True)
-        client = get_object_or_404(queryset, pk=pk)
-        serializer = ClientSerializer(client)
-        return Response(serializer.data,  status=status.HTTP_200_OK)  
-
-    # it gives the PUT/PATCH methods to update a complete dataset
-    def update(self, request, pk=None):
-        queryset = Client.objects.filter(is_active=True)
-        client = get_object_or_404(queryset, pk=pk)
-        serializer = ClientSerializer(client, data=request.data) 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    # it gives the PUT/PATCH methods to update a specific part of  a dataset
-    def partial_update(self, request, pk=None):
-        queryset = Client.objects.filter(is_active=True)
-        client = get_object_or_404(queryset, pk=pk)
-        serializer = ClientSerializer(client, data=request.data, partial=True) 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    queryset = Client.objects.filter(is_active=True)
+    serializer_class = ClientSerializer 
+    pagination_class = None # pagination disabled for frontend selects when creating samples
 
     # it gives the DELETE method 
-    def destroy(self, request, pk=None):
+    def destroy(self, request, *args, **kwargs):
         """
         In this case we "delete" the data by updating the active status
+        so the default behavior is overwrite
         """
-        queryset  = Client.objects.filter(is_active=True)
-        client = get_object_or_404(queryset, pk=pk)
+
+        client = self.get_object()
         client.is_active = False
         client.save()
 
         return Response(
-            {"message": f"Cliente {client.name} desactivado con éxito."},
+            {'message': f"Cliente {client.name} desactivado con éxito."},
             status=status.HTTP_200_OK
         )
     
 
-class SampleTypeViewSet(viewsets.ViewSet):
+class SampleTypeViewSet(viewsets.ModelViewSet):
     """
-    This view will get the entire Sample endpoint for the frontend
-    api/sample-category
-    api/sample-category/int:<id>
-    for GET, POST PUT/PATCH and DELETE operations
+    This view will get the entire sample type endpoint for the frontend
+    GET  /api/sample-type/ (list)
+    POST /api/sample-type/ (create)
+    GET  /api/sample-type/<int:id>/ (retrieve)
+    PUT  /api/sample-type/<int:id>/ (update)
+    PATCH /api/sample-type/<int:id>/ (partial_update)
+    DELETE /api/sample-type/<int:id>/ (destroy)
+    ModelViewSet hides the logic of list, create, retrieve, update, partial_update
+    and destroy unless you override them or create a custom one.
     """
     permission_classes = [IsAuthenticated]
+    queryset = SampleType.objects.filter(is_active=True)
+    serializer_class =SampleTypeSerializer
+    pagination_class = None # pagination disabled for frontend selects when creating samples
 
-    def list(self, request):
-        queryset = SampleType.objects.filter(is_active=True).order_by('name')
-        serializer = SampleTypeSerializer(queryset, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def create(self, request):
-        serializer = SampleTypeSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
-    
-    def retrieve(self, request, pk=None):
-        queryset = SampleType.objects.filter(is_active=True)
-        category = get_object_or_404(queryset, pk=pk)
-        serializer = SampleTypeSerializer(category)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def update(self, request, pk=None):
-        queryset = SampleType.objects.filter(is_active=True)
-        category = get_object_or_404(queryset, pk=pk)
-        serializer = SampleTypeSerializer(category, data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def partial_update(self, request, pk=None):
-        queryset = SampleType.objects.filter(is_active=True)
-        category = get_object_or_404(queryset, pk=pk)
-        serializer = SampleTypeSerializer(category, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, pk=None):
+    def destroy(self, request, *args, **kwargs):
         """
         In this case we "delete" the data by updating the active status
+        so the default behavior is overwrite
         """
-        queryset = SampleType.objects.filter(is_active=True)
-        category = get_object_or_404(queryset, pk=pk)
+
+        category = self.get_object()
         category.is_active = False
         category.save()
+
         return Response(
             {"message": f"categoria {category.name} desactivada con éxito."},
             status=status.HTTP_200_OK
         )
 
-class SampleViewSet(viewsets.ViewSet):
+class SampleViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet):
     """
-    This view will get the entire Sample endpoint for the frontend
-    api/samples
-    api/samples/int:<id>
-    for GET, POST PUT/PATCH and DELETE operations
+    This view will get the entire sample type endpoint for the frontend
+    GET  /api/sample/ (list)
+    POST /api/sample/ (create)
+    GET  /api/sample/<int:id>/ (retrieve)
+    PUT  /api/sample/<int:id>/ (update)
+    PATCH /api/sample/<int:id>/ (partial_update)
+    DELETE /api/sample/<int:id>/ (destroy)
+    GenericViewSet with mixins give a template for the basic CRUD 
+    and custom behavior for the desired methods.
     """
     permission_classes = [IsAuthenticated]
+    queryset = Sample.objects.filter(is_active=True)
+    serializer_class = SampleSerializer
 
-    def list(self, request):
-        queryset = Sample.objects.filter(is_active=True).order_by('-received_date')
-        serializer = SampleSerializer(queryset, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         """"
         custom sample code to have category prefix-year-xxxx
         example: PT2026-1
         """
-        serializer = SampleSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
             # create code and traceability log
@@ -217,7 +153,7 @@ class SampleViewSet(viewsets.ViewSet):
                         event = events_dict['creation'],
                     )
 
-                    return Response(SampleSerializer(sample).data, status=status.HTTP_201_CREATED)
+                    return Response(self.get_serializer(sample).data, status=status.HTTP_201_CREATED)
                 
             except Exception as err:
                 return Response(
@@ -225,21 +161,15 @@ class SampleViewSet(viewsets.ViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
-        return Response(serializer.errors,  status=status.HTTP_400_BAD_REQUEST)
-    
-    def retrieve(self, request, pk=None):
-        queryset = Sample.objects.filter(is_active=True)
-        sample = get_object_or_404(queryset, pk=pk)
-        serializer = SampleSerializer(sample)
-        return Response(serializer.data, status=status.HTTP_200_OK)   
-
-    def update(self, request, pk=None):
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+      
+    def update(self, request, pk=None, *args, **kwargs):
         """
         Any update must receive a reason for traceability log 
         frontend must send this traceability event along with the
         data to update.
         """
-        queryset = Sample.objects.filter(is_active=True)
+        queryset = self.get_queryset()
         sample = get_object_or_404(queryset, pk=pk)
         
         traceability_log = request.data.get('justification')
@@ -251,7 +181,7 @@ class SampleViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST 
             )
         
-        serializer = SampleSerializer(sample, data=request.data)
+        serializer = self.get_serializer(sample, data=request.data)
 
         if serializer.is_valid():
             # update data and create traceability log
@@ -263,7 +193,7 @@ class SampleViewSet(viewsets.ViewSet):
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"Modificación de muestra: {traceability_log.strip().upper()}",
+                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip().upper()}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -275,13 +205,13 @@ class SampleViewSet(viewsets.ViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request, pk=None, *args, **kwargs):
         """
         Any update must receive a reason for traceability log 
         frontend must send this traceability event along with the
         data to update.
         """
-        queryset = Sample.objects.filter(is_active=True)
+        queryset = self.get_queryset()
         sample = get_object_or_404(queryset, pk=pk)
         
         traceability_log = request.data.get('justification')
@@ -293,7 +223,7 @@ class SampleViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST 
             )
         
-        serializer = SampleSerializer(sample, data=request.data, partial=True)
+        serializer = self.get_serializer(sample, data=request.data, partial=True)
 
         if serializer.is_valid():
             # update data and create traceability log
@@ -305,7 +235,7 @@ class SampleViewSet(viewsets.ViewSet):
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"Modificación de muestra: {traceability_log.strip().upper()}",
+                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip().upper()}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -317,13 +247,13 @@ class SampleViewSet(viewsets.ViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request, pk=None, *args, **kwargs):
         """
         In this case we "delete" the data by updating the active status
         and add a traceability log from the user to why this sample
         has to be deactivated.
         """
-        queryset = Sample.objects.filter(is_active=True)
+        queryset = self.get_queryset()
         sample = get_object_or_404(queryset, pk=pk)
         
         traceability_log = request.data.get('justification')
@@ -345,7 +275,7 @@ class SampleViewSet(viewsets.ViewSet):
                 SampleTraceability.objects.create(
                     sample = sample,
                     user_responsible = request.user,
-                    event = f"Inactivación de muestra: {traceability_log.strip().upper()}",
+                    event = f"INACTIVACIÓN DE MUESTRA: {traceability_log.strip().upper()}",
                 )
 
                 return Response(
@@ -367,19 +297,27 @@ class SampleTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
     for GET operations, editing and deleting is forbidden.
     """
     permission_classes = [IsAuthenticated]
-    queryset = SampleTraceability.objects.all().order_by('-event_date')
+    queryset = SampleTraceability.objects.all()
     serializer_class = SampleTraceabilitySerializer 
 
-    def get_queryset(self):
+    # decorator to tell DRF that use the global pagination and to add a custom readable url
+    @action(detail=False, methods=['get'], url_path=r'sample/(?P<sample_id>\d+)')
+    def sample_traceability(self, request, sample_id=None):
         """
-        The read only view set gives the  predefined methods,
+        The read only view set gives the predefined methods,
         here we get data by sample id thanks to that inheritance.
         """
-        queryset = super().get_queryset()
-        sample_id = self.request.query_params.get('sample_id')
 
-        if sample_id is not None:
-            queryset = queryset.filter(sample=sample_id)
+        queryset = SampleTraceability.objects.filter(sample=sample_id)
+        
+        # tell DRF that paginate the queryset based n the global settings
+        page = self.paginate_queryset(queryset)
 
-        return queryset       
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)    
+            return self.get_paginated_response(serializer.data)
+        
+        # safeguard in case pagination is disabled
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)       
     
