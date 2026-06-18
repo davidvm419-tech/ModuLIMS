@@ -112,7 +112,7 @@ DATABASES = {
         'USER': os.environ.get('DB_USER'),
         'PASSWORD': os.environ.get('DB_PASSWORD'),
         'HOST': os.environ.get('DB_HOST'),
-        'port': os.environ.get('DB_PORT'),
+        'PORT': os.environ.get('DB_PORT'),
     }
 }
 
@@ -135,6 +135,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
+# Set personalized user model to django configuration
+AUTH_USER_MODEL = 'users.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

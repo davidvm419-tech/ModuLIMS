@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 # Create your models here.
 
@@ -71,7 +71,7 @@ class Sample(models.Model):
 
 class SampleTraceability(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name='traceability_logs')
-    user_responsible = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions_logged')
+    user_responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='actions_logged')
     event = models.TextField('Evento')
     event_date = models.DateTimeField('Fecha', auto_now_add=True)
 
