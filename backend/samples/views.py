@@ -2,14 +2,13 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from lims.constants import events_dict
-from samples.models import Client, SampleType, Sample, SampleTraceability
-from samples.serializers import ClientSerializer, SampleTypeSerializer, SampleSerializer, SampleTraceabilitySerializer   
+from .models import Client, SampleType, Sample, SampleTraceability
+from .serializers import ClientSerializer, SampleTypeSerializer, SampleSerializer, SampleTraceabilitySerializer   
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
    
-
 
 STANDARD_ERROR_MESSAGE = 'Se requiere de una justificación para modificar la muestra.'
 
@@ -140,24 +139,25 @@ class SampleViewSet(
                     # assign code to sample
                     sample.code = f"{prefix}{year}-{next_code}"  
                     
+                    sample.save()
+
                     # assign sample assays
                     '''
                     add when assay module is implemented
                     ''' 
-                    sample.save()
 
                     # traceability log
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = events_dict['creation'],
+                        event = events_dict['sample_creation'],
                     )
 
                     return Response(self.get_serializer(sample).data, status=status.HTTP_201_CREATED)
                 
             except Exception as err:
                 return Response(
-                    {'error':f'Error en el ingreso de la muestra: {str(err)}'},
+                    {'error': f"Error en el ingreso de la muestra: {str(err)}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
@@ -172,10 +172,10 @@ class SampleViewSet(
         queryset = self.get_queryset()
         sample = get_object_or_404(queryset, pk=pk)
         
-        traceability_log = request.data.get('justification')
+        traceability_log = request.data.get('justification', '').strip()
         
         # check message for traceability exists
-        if not traceability_log or not traceability_log.strip():
+        if not traceability_log:
             return Response(
                 {"error": STANDARD_ERROR_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST 
@@ -193,7 +193,7 @@ class SampleViewSet(
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip().upper()}",
+                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip()}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -211,17 +211,17 @@ class SampleViewSet(
         frontend must send this traceability event along with the
         data to update.
         """
-        queryset = self.get_queryset()
-        sample = get_object_or_404(queryset, pk=pk)
-        
-        traceability_log = request.data.get('justification')
+        traceability_log = request.data.get('justification', '').strip()
         
         # check message for traceability exists
-        if not traceability_log or not traceability_log.strip():
+        if not traceability_log:
             return Response(
                 {"error": STANDARD_ERROR_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST 
             )
+        
+        queryset = self.get_queryset()
+        sample = get_object_or_404(queryset, pk=pk)
         
         serializer = self.get_serializer(sample, data=request.data, partial=True)
 
@@ -235,7 +235,7 @@ class SampleViewSet(
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip().upper()}",
+                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip()}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -256,12 +256,12 @@ class SampleViewSet(
         queryset = self.get_queryset()
         sample = get_object_or_404(queryset, pk=pk)
         
-        traceability_log = request.data.get('justification')
+        traceability_log = request.data.get('justification', '').strip()
         
         # check message for traceability exists
-        if not traceability_log or not traceability_log.strip():
+        if not traceability_log:
             return Response(
-                {"error": STANDARD_ERROR_MESSAGE},
+                {'error': STANDARD_ERROR_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST 
             )
         
@@ -275,7 +275,7 @@ class SampleViewSet(
                 SampleTraceability.objects.create(
                     sample = sample,
                     user_responsible = request.user,
-                    event = f"INACTIVACIÓN DE MUESTRA: {traceability_log.strip().upper()}",
+                    event = f"INACTIVACIÓN DE MUESTRA: {traceability_log.strip()}",
                 )
 
                 return Response(

@@ -28,3 +28,17 @@ class User(AbstractUser):
         ordering = ['first_name']
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
+    
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+
+class UserTraceability(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="traceability_logs")
+    user_responsible = models.ForeignKey(User,  on_delete=models.CASCADE, related_name="actions_logged")
+    event = models.TextField('Evento')
+    event_date = models.DateTimeField('Fecha', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-event_date']
+        verbose_name = 'Trazabilidad de usuarios'
