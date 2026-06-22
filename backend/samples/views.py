@@ -2,8 +2,8 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from lims.constants import events_dict
-from .models import Client, SampleType, Sample, SampleTraceability
-from .serializers import ClientSerializer, SampleTypeSerializer, SampleSerializer, SampleTraceabilitySerializer   
+from .models import SampleType, Sample, SampleTraceability
+from .serializers import SampleTypeSerializer, SampleSerializer, SampleTraceabilitySerializer   
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -12,40 +12,6 @@ from rest_framework.response import Response
 
 STANDARD_ERROR_MESSAGE = 'Se requiere de una justificación para modificar la muestra.'
 
-# view sets hide the underlying implementation of  CRUD details
-class ClientViewSet(viewsets.ModelViewSet):
-    """
-    This view will get the entire Client endpoint for the frontend
-    GET  /api/clients/ (list)
-    POST /api/clients/ (create)
-    GET  /api/clients/<int:id>/ (retrieve)
-    PUT  /api/clients/<int:id>/ (update)
-    PATCH /api/clients/<int:id>/ (partial_update)
-    DELETE /api/clients/<int:id>/ (destroy)
-    ModelViewSet hides the logic of list, create, retrieve, update, partial_update
-    and destroy unless you override them or create a custom one.
-    """
-    permission_classes = [IsAuthenticated]
-    queryset = Client.objects.filter(is_active=True)
-    serializer_class = ClientSerializer 
-    pagination_class = None # pagination disabled for frontend selects when creating samples
-
-    # it gives the DELETE method 
-    def destroy(self, request, *args, **kwargs):
-        """
-        In this case we "delete" the data by updating the active status
-        so the default behavior is overwrite
-        """
-
-        client = self.get_object()
-        client.is_active = False
-        client.save()
-
-        return Response(
-            {'message': f"Cliente {client.name} desactivado con éxito."},
-            status=status.HTTP_200_OK
-        )
-    
 
 class SampleTypeViewSet(viewsets.ModelViewSet):
     """

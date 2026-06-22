@@ -1,26 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-# Create your models here.
-
-class Client(models.Model):
-    name = models.CharField('Cliente', max_length=100,  unique=True)
-    nit = models.CharField('NIT', max_length=100, unique=True)
-    address = models.CharField('Dirección', max_length=100)
-    contact_person = models.CharField('Contacto', max_length=100)
-    email = models.CharField('Correo electrónico', max_length=50)
-    phone = models.CharField('Teléfono', max_length=20)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ['name']
-        verbose_name = 'Cliente'
-        verbose_name_plural = 'Clientes'
-
-    def __str__(self):
-        return self.name
-
-
 
 class SampleType(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -47,7 +27,7 @@ SAMPLE_STATUS = [
 
 
 class Sample(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='samples')
+    client = models.ForeignKey('clients.Client', on_delete=models.CASCADE, related_name='samples')
     code = models.CharField('código', max_length=50, blank=True, unique=True)
     name = models.CharField('Nombre', max_length=100)
     type = models.ForeignKey(SampleType, on_delete=models.CASCADE, related_name='samples')
@@ -71,7 +51,7 @@ class Sample(models.Model):
 
 class SampleTraceability(models.Model):
     sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name='traceability_logs')
-    user_responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='actions_logged')
+    user_responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sample_actions_logged')
     event = models.TextField('Evento')
     event_date = models.DateTimeField('Fecha', auto_now_add=True)
 

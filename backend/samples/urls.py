@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter    
-from .views import ClientViewSet, SampleTypeViewSet, SampleViewSet, SampleTraceabilityViewSet
+from .views import SampleTypeViewSet, SampleViewSet, SampleTraceabilityViewSet
 
 
 """
@@ -9,9 +9,6 @@ in the corresponding view
 """
 router = DefaultRouter()  
 
-# client urls
-router.register(r'clients', ClientViewSet, basename='client')
-
 # samples types urls
 router.register(r'sample-types', SampleTypeViewSet, basename='sample-type')
 
@@ -19,7 +16,7 @@ router.register(r'sample-types', SampleTypeViewSet, basename='sample-type')
 router.register(r'samples', SampleViewSet, basename='sample')
 
 # samples traceability urls
-router.register(r'traceability', SampleTraceabilityViewSet, basename='traceability')
+router.register(r'samples-traceability', SampleTraceabilityViewSet, basename='sample-traceability')
 
 urlpatterns = [
     path('', include(router.urls)),

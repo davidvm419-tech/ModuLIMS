@@ -30,7 +30,6 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         """
         Add the user creation into the traceability table
         """
-
         password = request.data.get('password', '').strip()
 
         # verify password rules
@@ -91,7 +90,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         user = get_object_or_404(queryset, pk=pk)
 
-        # check that request is  PATCH or  PUT  t use only noe method
+        # check that request is PATCH or PUT to use only one method
         partial = kwargs.pop('partial', False) or request.method == 'PATCH'
         
         serializer = self.get_serializer(user, data=request.data, partial=partial)
@@ -125,7 +124,6 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         In this case we "delete" the data by updating the active status
         so the default behavior is overwrite
         """
-
         traceability_log = request.data.get('justification', '').strip().upper()
         
         if not traceability_log:
@@ -136,7 +134,6 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         
         try:
             with transaction.atomic():
-
                 user = self.get_object()
                 user.is_active = False
                 user.save()
@@ -149,7 +146,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
                 )
 
                 return Response(
-                    {"message": f"Usuario {user.username} desactivada con éxito."}, 
+                    {"message": f"Usuario {user.username} desactivado con éxito."}, 
                     status=status.HTTP_200_OK
                 )
             
@@ -171,7 +168,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     queryset =  User.objects.filter(is_active=True)
     serializer_class = UserProfileSerializer
 
-    http_method_names = ['get', 'patch', 'options',  'head']
+    http_method_names = ['get', 'patch', 'options',  'head', 'GET', 'PATCH', 'OPTIONS',  'HEAD']
         
     def partial_update(self, request, pk=None, *args, **kwargs):
         """
@@ -290,3 +287,4 @@ class UserTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
         # safeguard in case pagination is disabled
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)  
+    

@@ -1,4 +1,6 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
+import io
+from PIL import Image
 from rest_framework.test import APITestCase
 
 
@@ -16,7 +18,7 @@ class UserBaseAdminData(APITestCase):
             'email' : 'doe@test.com',
             'username' : 'john_doe',
             'job_title' : 'Analista de Microbiología',
-            'rol'  : 'LABORATORY ANALYST',
+            'rol' : 'LABORATORY ANALYST',
             'password' : 'password123',
             'password_confirmation' : 'password123',
         }
@@ -29,7 +31,7 @@ class UserBaseAdminData(APITestCase):
             'email' : 'juan@test.com',
             'username' : 'john_doe',
             'job_title' : 'Analista de Microbiología',
-            'rol'  : 'LABORATORY ANALYST',
+            'rol' : 'LABORATORY ANALYST',
             'password' : 'password123',
             'password_confirmation' : 'password123',
         }
@@ -42,7 +44,7 @@ class UserBaseAdminData(APITestCase):
             'email' : 'doe@test.com',
             'username' : 'john_doe',
             'job_title' : 'Analista de Microbiología',
-            'rol'  : 'LABORATORY ANALYST',
+            'rol' : 'LABORATORY ANALYST',
             'password' : 'password12',
             'password_confirmation' : 'password123',
         }
@@ -89,7 +91,7 @@ class UserBaseProfileData(APITestCase):
             'new_password_confirmation' : 'newsecurepassword123',
         }
 
-    def get__invalid_update_my_password(self):
+    def get_invalid_update_my_password(self):
         return {
             'old_password' : 'password123',
             'new_password' : 'newsecurepassword123', 
@@ -98,18 +100,19 @@ class UserBaseProfileData(APITestCase):
         }
     
     def get_update_my_signature(self):
-        # simulated image
-        signature_png = (
-            b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c\x04\x00\x00\x00\rIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82'
-        )
+        # using Pillow to create a image
+        file_buffer = io.BytesIO()
+        image = Image.new('RGBA', size=(1, 1), color=(0, 0, 0, 0))
+        image.save(file_buffer, 'png')
+        file_buffer.seek(0)
         
         simulated_image = SimpleUploadedFile(
-            name = 'Firma_John.png',
-            content = signature_png,
+            name='Firma_John.png',
+            content=file_buffer.getvalue(),
             content_type='image/png', 
         )
         
         return {
-            'sign' : simulated_image,
-            'justification' : 'Actualización de firma.',
-        } 
+            'sign': simulated_image,
+            'justification': 'Actualización de firma.',
+        }
