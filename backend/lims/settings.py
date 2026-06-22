@@ -164,3 +164,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 20
 }
+
+# Load signature images on the media folder
+MEDIA_URL = '/BPD-signatures/'
+MEDIA_ROOT = BASE_DIR / 'files' / 'BPD-signatures'

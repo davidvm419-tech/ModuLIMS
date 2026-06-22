@@ -6,7 +6,7 @@ LABORATORY_ROLES = [
     ('ASSISTANT', 'Asistente técnico'),
     ('AUXILIARY', 'Auxiliar'),
     ('LABORATORY ANALYST', 'Analista de Laboratorio'),
-    ('QUALITY_ANALYST', 'Analista de Calidad'),
+    ('QUALITY ANALYST', 'Analista de Calidad'),
     ('LABORATORY COORDINATOR', 'Coordinador de Laboratorio'),
     ('QUALITY CHIEF', 'Jefe de Calidad'),
     ('DIRECTOR', 'Director de Laboratorio'),
@@ -18,6 +18,7 @@ class User(AbstractUser):
     last_name = models.CharField('Apellido(s)', max_length=50)
     identification = models.CharField('Cédula', max_length=50, unique=True)
     email = models.EmailField('correo', max_length=50)
+    # django default username (no spaces valid)
     username = models.CharField('Nombre de usuario', max_length=80, unique=True)
     job_title = models.CharField('Cargo', max_length=80)
     rol = models.CharField('Rol', choices=LABORATORY_ROLES, default='ASSISTANT')
@@ -35,7 +36,7 @@ class User(AbstractUser):
 
 class UserTraceability(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="traceability_logs")
-    user_responsible = models.ForeignKey(User,  on_delete=models.CASCADE, related_name="actions_logged")
+    user_responsible = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_actions_logged")
     event = models.TextField('Evento')
     event_date = models.DateTimeField('Fecha', auto_now_add=True)
 

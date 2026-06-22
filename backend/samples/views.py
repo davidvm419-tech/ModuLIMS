@@ -172,7 +172,7 @@ class SampleViewSet(
         queryset = self.get_queryset()
         sample = get_object_or_404(queryset, pk=pk)
         
-        traceability_log = request.data.get('justification', '').strip()
+        traceability_log = request.data.get('justification', '').strip().upper()
         
         # check message for traceability exists
         if not traceability_log:
@@ -193,7 +193,7 @@ class SampleViewSet(
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip()}",
+                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -211,7 +211,7 @@ class SampleViewSet(
         frontend must send this traceability event along with the
         data to update.
         """
-        traceability_log = request.data.get('justification', '').strip()
+        traceability_log = request.data.get('justification', '').strip().upper()
         
         # check message for traceability exists
         if not traceability_log:
@@ -235,7 +235,7 @@ class SampleViewSet(
                     SampleTraceability.objects.create(
                         sample = sample,
                         user_responsible = request.user,
-                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log.strip()}",
+                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -256,7 +256,7 @@ class SampleViewSet(
         queryset = self.get_queryset()
         sample = get_object_or_404(queryset, pk=pk)
         
-        traceability_log = request.data.get('justification', '').strip()
+        traceability_log = request.data.get('justification', '').strip().upper()
         
         # check message for traceability exists
         if not traceability_log:
@@ -275,7 +275,7 @@ class SampleViewSet(
                 SampleTraceability.objects.create(
                     sample = sample,
                     user_responsible = request.user,
-                    event = f"INACTIVACIÓN DE MUESTRA: {traceability_log.strip()}",
+                    event = f"INACTIVACIÓN DE MUESTRA: {traceability_log}",
                 )
 
                 return Response(
@@ -307,6 +307,8 @@ class SampleTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
         The read only view set gives the predefined methods,
         here we get data by sample id thanks to that inheritance.
         """
+        # avoid requests with none existing samples
+        get_object_or_404(Sample, pk=sample_id)
 
         queryset = SampleTraceability.objects.filter(sample=sample_id)
         

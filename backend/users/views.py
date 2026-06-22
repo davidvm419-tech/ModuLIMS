@@ -80,7 +80,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         """
         Update the user data in case that is needed.
         """
-        traceability_log = request.data.get('justification', '').strip()
+        traceability_log = request.data.get('justification', '').strip().upper()
 
         if not traceability_log:
             return Response(
@@ -106,7 +106,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
                     UserTraceability.objects.create(
                         user = user,
                         user_responsible = request.user,
-                        event = f"MODIFICACIÓN DE USUARIO: {traceability_log.strip()}",
+                        event = f"MODIFICACIÓN DE USUARIO: {traceability_log}",
                     )
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -126,7 +126,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         so the default behavior is overwrite
         """
 
-        traceability_log = request.data.get('justification', '').strip()
+        traceability_log = request.data.get('justification', '').strip().upper()
         
         if not traceability_log:
             return Response(
@@ -145,7 +145,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
                 UserTraceability.objects.create(
                     user = user,
                     user_responsible = request.user,
-                    event = f"INACTIVACIÓN DE USUARIO: {traceability_log.strip()}"
+                    event = f"INACTIVACIÓN DE USUARIO: {traceability_log}"
                 )
 
                 return Response(
@@ -172,7 +172,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
 
     http_method_names = ['get', 'patch', 'options',  'head']
-
+        
     def partial_update(self, request, pk=None, *args, **kwargs):
         """
         user can update password and sign if needed
@@ -184,7 +184,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        traceability_log = request.data.get('justification', '').strip()
+        traceability_log = request.data.get('justification', '').strip().upper()
 
         if not traceability_log:
             return Response(
@@ -274,6 +274,9 @@ class UserTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
         The read only view set gives the predefined methods,
         here we get data by user id thanks to that inheritance.
         """
+
+        # avoid requests with none existing users
+        get_object_or_404(User, pk=user_id)
 
         queryset = UserTraceability.objects.filter(user=user_id)
         

@@ -43,12 +43,18 @@ class ClientAPITestCase(APITestCase):
         self.detail_url = reverse('client-detail', kwargs={'pk': self.active_client.pk})
 
     def test_list_active_clients(self):
+        """
+        Simulates retreiving a list of active clients.
+        """
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['name'], 'LABORATORIO A')    
 
     def test_create_valid_client(self):
+        """
+        Simulates creating a valid client.
+        """
         data = {
             'name' : 'Laboratorio C',
             'nit' : '121.430.223.111',
@@ -59,10 +65,14 @@ class ClientAPITestCase(APITestCase):
         }
 
         response = self.client.post(self.list_url, data, format='json')
-        self.assertEqual(response.status_code,  status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(Client.objects.filter(nit='121.430.223.111').exists())      
 
     def test_create_duplicated_client(self):
+        """
+        Simulates an user trying to create the same client again
+        and failing due to name or nit restrictions.
+        """
         data = {
             'name' : 'laboratorio a',
             'nit' : '123.433.223.111',
@@ -77,6 +87,10 @@ class ClientAPITestCase(APITestCase):
         self.assertIn('name', response.data)
 
     def test_create_client_missing_fields(self):
+        """
+        Simulates an user trying to create a client with empty
+        spaces to test that such creation should fail.
+        """
         data = {
             'name' : 'laboratorio a',
             'nit' : '',
@@ -94,6 +108,10 @@ class ClientAPITestCase(APITestCase):
         self.assertIn('contact_person', response.data)
 
     def test_destroy_inactivate_client(self):
+        """
+        Simulates an user "deleting" an  user by changing the 
+        active status to false.
+        """
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -129,12 +147,18 @@ class SampleTypeAPITestCase(APITestCase):
         self.detail_url = reverse('sample-type-detail', kwargs={'pk': self.active_type.pk})
 
     def test_list_active_types(self):
+        """
+        Simulates retreiving a list of active samples types.
+        """
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['name'], 'PRODUCTO TERMINADO')
 
     def test_create_valid_type(self):
+        """
+        Simulates creating a valid type.
+        """
         data = {
             'name' : 'Agua',
             'prefix' : 'AG',
