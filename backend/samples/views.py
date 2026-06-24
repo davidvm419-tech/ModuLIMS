@@ -45,10 +45,7 @@ class SampleTypeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
 
-class SampleViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet):
+class SampleViewSet(viewsets.ModelViewSet):
     """
     This view will get the entire sample type endpoint for the frontend
     GET  /api/sample/ (list)
@@ -135,9 +132,6 @@ class SampleViewSet(
         frontend must send this traceability event along with the
         data to update.
         """
-        queryset = self.get_queryset()
-        sample = get_object_or_404(queryset, pk=pk)
-        
         traceability_log = request.data.get('justification', '').strip().upper()
         
         # check message for traceability exists
@@ -147,7 +141,12 @@ class SampleViewSet(
                 status=status.HTTP_400_BAD_REQUEST 
             )
         
-        serializer = self.get_serializer(sample, data=request.data)
+        sample = self.get_object()
+
+        # check that request is PATCH or PUT to use only one method
+        partial = kwargs.pop('partial', False) or request.method == 'PATCH'
+        
+        serializer = self.get_serializer(sample, data=request.data, partial=partial)
 
         if serializer.is_valid():
             # update data and create traceability log
@@ -171,57 +170,12 @@ class SampleViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def partial_update(self, request, pk=None, *args, **kwargs):
-        """
-        Any update must receive a reason for traceability log 
-        frontend must send this traceability event along with the
-        data to update.
-        """
-        traceability_log = request.data.get('justification', '').strip().upper()
-        
-        # check message for traceability exists
-        if not traceability_log:
-            return Response(
-                {"error": STANDARD_ERROR_MESSAGE},
-                status=status.HTTP_400_BAD_REQUEST 
-            )
-        
-        queryset = self.get_queryset()
-        sample = get_object_or_404(queryset, pk=pk)
-        
-        serializer = self.get_serializer(sample, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            # update data and create traceability log
-            try:
-                with transaction.atomic():
-                    serializer.save()
-            
-                    # traceability log
-                    SampleTraceability.objects.create(
-                        sample = sample,
-                        user_responsible = request.user,
-                        event = f"MODIFICACIÓN DE MUESTRA: {traceability_log}",
-                    )
-
-                    return Response(serializer.data, status=status.HTTP_200_OK)
-            except Exception as err:
-                return Response(
-                    {'error': f'error actualizando la muestra: {str(err)}'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def destroy(self, request, pk=None, *args, **kwargs):
         """
         In this case we "delete" the data by updating the active status
         and add a traceability log from the user to why this sample
         has to be deactivated.
-        """
-        queryset = self.get_queryset()
-        sample = get_object_or_404(queryset, pk=pk)
-        
+        """        
         traceability_log = request.data.get('justification', '').strip().upper()
         
         # check message for traceability exists
@@ -230,6 +184,8 @@ class SampleViewSet(
                 {'error': STANDARD_ERROR_MESSAGE},
                 status=status.HTTP_400_BAD_REQUEST 
             )
+        
+        sample = self.get_object()
         
         # deactivate sample and create traceability log
         try:

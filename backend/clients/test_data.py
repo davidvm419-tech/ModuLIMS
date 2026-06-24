@@ -6,10 +6,9 @@ class ClientBaseData(APITestCase):
     base class to create the test data for views 
     when creating, updating or inactivating clients.
     """
-        
     def  get_valid_client_1(self):
         return {
-            'name' : 'LABORATORIO A',
+            'name' : 'Laboratorio a',
             'nit' : '540.211.322.562.2',
             'address' : 'calle real 435 # 11-41',
             'contact_person' : 'John Doe',
@@ -19,7 +18,7 @@ class ClientBaseData(APITestCase):
     
     def get_valid_client_2(self):
         return {
-            'name' : 'LABORATORIO F',
+            'name' : 'Laboratorio f',
             'nit' : '120.511.411.132.1',
             'address' : 'calle 123 # 37-11',
             'contact_person' : 'God Doe',
@@ -29,7 +28,7 @@ class ClientBaseData(APITestCase):
     
     def get_inactive_client(self):
         return {
-            'name' : 'LABORATORIO Z',
+            'name' : 'Laboratorio z',
             'nit' : '145.111.442.321.2',
             'address' : 'calle falsa 123 # 37-11',
             'contact_person' : 'False Doe',
@@ -40,7 +39,7 @@ class ClientBaseData(APITestCase):
     
     def get_duplicated_client(self):
         return {
-            'name' : 'LABORATORIO A',
+            'name' : 'Laboratorio a',
             'nit' : '540.211.322.562.1',
             'address' : 'calle real 435 # 11-41',
             'contact_person' : 'John Doe',
@@ -60,14 +59,14 @@ class ClientBaseData(APITestCase):
 
     def get_update_valid_client(self):
         return {
-            'name' : 'LABORATORIO A FIXED',
+            'name' : 'Laboratorio a FIXED',
             'phone' : '310 412 5311',
             'justification' : 'Corrección de nombre.'
         }
 
     def get_update_invalid_client(self):
         return {
-            'name' : 'LABORATORIO AB',
+            'name' : 'Laboratorio AB',
             'phone' : '310 412 5311',
         }
     

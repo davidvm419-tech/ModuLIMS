@@ -68,8 +68,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        queryset = self.get_queryset()
-        client = get_object_or_404(queryset, pk=pk)
+        client = self.get_object()
 
         # check that request is PATCH or PUT to use only one method
         partial = kwargs.pop('partial', False) or request.method == 'PATCH'
@@ -99,7 +98,6 @@ class ClientViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
- 
     def destroy(self, request, *args, **kwargs):
         """
         In this case we "delete" the data by updating the active status
@@ -113,9 +111,10 @@ class ClientViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        client = self.get_object()
+        
         try:
             with transaction.atomic():
-                client = self.get_object()
                 client.is_active = False
                 client.save()
 

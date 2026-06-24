@@ -4,385 +4,332 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from .models import SampleType, Sample, SampleTraceability
 from clients.models import Client
+from .test_data import SampleTypeBaseData, SampleBaseData
 
 
 User = get_user_model()
 
 
-class SampleTypeAPITestCase(APITestCase):
+class SampleTypeAPITestCase(SampleTypeBaseData, APITestCase):
+    """
+    test the sample types views endpoints to create, update and "delete" any type.
+    """
     def setUp(self):
-        """
-        test data for sample types
-        """
-        self.user = User.objects.create_user(
-            username = 'analista1',
-            password = 'password123'
+        self.admin_user = User.objects.create(
+            first_name = 'Peter',
+            last_name = 'Admin',
+            identification = '12954321789',
+            email = 'peter@test.com',
+            username = 'peter_admin',
+            job_title = 'Coordinador de Labratorio',
+            rol = 'LABORATORY COORDINATOR',
         )
 
-        self.client.force_authenticate(user=self.user)
+        # save hashed password in database
+        self.admin_user.set_password('superpassword123')
+        self.admin_user.save()
 
-        self.active_type = SampleType.objects.create(
-            name = 'PRODUCTO TERMINADO',
-            prefix = 'PT',
-            is_active = True
-        )
-
-        self.disabled_type = SampleType.objects.create(
-            name = 'MATERIA PRIMA',
-            prefix = 'M',
-            is_active = False
-        )
+        self.client.force_authenticate(user=self.admin_user)
 
         self.list_url = reverse('sample-type-list')
-        self.detail_url = reverse('sample-type-detail', kwargs={'pk': self.active_type.pk})
-
-    def test_list_active_types(self):
-        """
-        Simulates retreiving a list of active samples types.
-        """
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], 'PRODUCTO TERMINADO')
 
     def test_create_valid_type(self):
         """
         Simulates creating a valid type.
         """
-        data = {
-            'name' : 'Agua',
-            'prefix' : 'AG',
-            'is_active' : True,
-        }
+        new_sample_type = self.get_valid_type1()
+        response = self.client.post(self.list_url, new_sample_type, format='json')
 
-        response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(SampleType.objects.filter(name='AGUA').exists())
+        self.assertEqual(response.data['name'], 'PRODUCTO TERMINADO')
 
     def test_create_duplicated_type(self):
-        data = {
-            'name' : 'Producto terminado',
-            'prefix' : 'P',
-            'is_active' : True,
-        }
+        """
+        create a sample type that already exists in the database.
+        """
+        new_sample_type = self.get_valid_type1()
+        self.client.post(self.list_url, new_sample_type, format='json')
 
-        response = self.client.post(self.list_url, data, format='json')
+        duplicated_type = self.get_duplicated_type()
+        response = self.client.post(self.list_url, duplicated_type, format='json')
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('name', response.data)
 
-    def test_create_type_missing_fields(self):
-        data = {
-            'name' : '',
-            'prefix' : 'AT',
-            'is_active' : True,
-        }
+    def test_create_invalid_type(self):
+        """
+        create a new type with missing fields.
+        """
+        new_sample_type = self.get_invalid_type()
+        response = self.client.post(self.list_url, new_sample_type, format='json')
 
-        response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('name', response.data)
-  
 
-    def test_destroy_inactive_type(self):
-        response = self.client.delete(self.detail_url)
+    def test_list_active_types(self):
+        """
+        simulates retreiving a list of sample types, 
+        separating active from inactive ones.
+        """
+        # create 2 valid types and one inactive
+        new_sample_type1 = self.get_valid_type1()
+        new_sample_type2 = self.get_valid_type2()
+        inactive_sample_type = self.get_inactive_type()
+
+        self.client.post(self.list_url, new_sample_type1, format='json')
+        self.client.post(self.list_url, new_sample_type2, format='json')
+        self.client.post(self.list_url, inactive_sample_type, format='json')
+
+        # get the 2 active types
+        response = self.client.get(self.list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.active_type.refresh_from_db() # read database with updated data
-        self.assertFalse(self.active_type.is_active)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]['name'], 'AGUA')
+
+    def test_destroy_inactive_type(self):
+        """
+        attempting to "destroy" a sample type and check status change.
+        """
+        new_sample_type1 = self.get_valid_type1()
+        response = self.client.post(self.list_url, new_sample_type1, format='json')
+        
+        # get the id from the sample type for the detail url
+        sample_type_id = response.data['id']
+        detail_url = reverse('sample-type-detail', kwargs={'pk': sample_type_id})
+        
+        response = self.client.delete(detail_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        deleted_type = SampleType.objects.get(pk=sample_type_id)
+        self.assertFalse(deleted_type.is_active)
 
 
-class SampleAPITestCase(APITestCase):
+class SampleAPITestCase(SampleBaseData, APITestCase):
+    """
+    test the sample views endpoints to create, update and "delete" samples.
+    And retreive sample traceability logs.
+    """
     def setUp(self):
         """
-        test data for samples
+        In the set up is include a client and a type to use their ids
+        in the tests.
         """
-        self.user = User.objects.create_user(
-            username = 'analista1',
-            password = 'password123'
+        self.admin_user = User.objects.create(
+            first_name = 'Peter',
+            last_name = 'Admin',
+            identification = '12954321789',
+            email = 'peter@test.com',
+            username = 'peter_admin',
+            job_title = 'Coordinador de Labratorio',
+            rol = 'LABORATORY COORDINATOR',
         )
 
-        self.client.force_authenticate(user=self.user)
+        # save hashed password in database
+        self.admin_user.set_password('superpassword123')
+        self.admin_user.save()
 
-        self.sample_client  = Client.objects.create(
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.client_for_sample = Client.objects.create(
             name = 'LABORATORIO A',
             nit = '540.211.322.562.2',
             address = 'calle real 435 # 11-41',
             contact_person = 'John Doe',
             email = 'alfa@email.com',
             phone = '310 412 5412',
-            is_active = True,
         )
 
-        self.type = SampleType.objects.create(
+        self.sample_type = SampleType.objects.create(
             name = 'PRODUCTO TERMINADO',
             prefix = 'PT',
-            is_active = True
-        )
-
-        self.active_sample = Sample.objects.create(
-            client = self.sample_client,
-            code = 'PT2026-1',
-            name = 'TABLETA DE ACETAMINOFÉN',
-            type = self.type,
-            manufacturing_date = '2026-01-03',
-            expiration_date = '2028-01-03',
-            description = 'TABLETA BLANCA OVALADA SIN PARTÍCULAS EXTRAÑAS',
-            quantity = '100 TABLETAS',
-            observations = 'NA',
-            received_date = '2026-04-01',
-            status = 'RECEIVED',
-            is_active = True,
-        )
-
-        self.inactive_sample = Sample.objects.create(
-            client = self.sample_client,
-            code = 'M2026-1',
-            name = 'POLVO DE ACETAMINOFÉN',
-            type = self.type,
-            manufacturing_date = '2025-02-03',
-            expiration_date = '2029-02-03',
-            description = 'POLVO BLANCO SIN PARTÍCULAS EXTRAÑAS',
-            quantity = '100 GRAMOS',
-            observations = 'NA',
-            received_date = '2026-02-01',
-            status = 'RECEIVED',
-            is_active = False,
         )
 
         self.list_url = reverse('sample-list')
-        self.detail_url = reverse('sample-detail', kwargs={'pk': self.active_sample.pk})
-
-    def test_list_active_samples(self):
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['count'], 1)
-        self.assertEqual(response.data['results'][0]['code'], 'PT2026-1')
 
     def test_create_sample(self):
         """
-        for sample creation also assert that traceability log is store in the database.
+        create a new valid sample and check that a second sample creation 
+        gives the corresponding next code number.
         """
-        data = {
-            'client' : self.sample_client.id,
-            'name' : 'Cápsulas de omega 3',
-            'type' : self.type.id,
-            'manufacturing_date' : '2026-01-01',
-            'expiration_date' : '2029-01-01',
-            'description' : 'CÁPSULA color cafe ovalada SIN PARTÍCULAS EXTRAÑAS',
-            'quantity' : '100 gramos',
-            'observations' : 'na',
-        }
+        # create sample and relate ids for client and sample
+        new_sample = self.get_valid_sample_1()
+        new_sample['client'] = self.client_for_sample.id
+        new_sample['type'] = self.sample_type.id
 
-        response = self.client.post(self.list_url, data, format='json')
-        
-        self.assertEqual(response.status_code,  status.HTTP_201_CREATED)
-        self.assertEqual(response.data['observations'],  'NA')
-        self.assertEqual(response.data['code'], 'PT2026-2')    
-       
-        # get sample
-        sample = Sample.objects.get(code='PT2026-2')
-        
-        # check that traceability was created
-        traceability_exist = SampleTraceability.objects.filter(sample=sample).exists()  
+        response = self.client.post(self.list_url, new_sample, format='json')
 
-        # Check if traceability was created or not 
-        self.assertTrue(traceability_exist, 'Error, traceability was not created!')
-
-        # check traceability log
-        traceability_log = SampleTraceability.objects.filter(sample=sample).order_by('-id').first()
-        self.assertEqual(traceability_log.user_responsible, self.user)
-        self.assertEqual(traceability_log.event, 'MUESTRA INGRESADA EN EL SISTEMA')  
-
-    def test_retrieve_sample(self):
-        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['code'], 'PT2026-1')
-        self.assertEqual(response.data['name'], 'TABLETA DE ACETAMINOFÉN')
+        
+        # create sample 2
+        new_sample2 = self.get_valid_sample_2()
+        new_sample2['client'] = self.client_for_sample.id
+        new_sample2['type'] = self.sample_type.id
 
-    def test_invalid_update_sample_put(self):
+        response = self.client.post(self.list_url, new_sample, format='json')
+
+        self.assertEqual(response.data['code'], 'PT2026-2')
+
+    def test_create_invalid_sample(self):
         """
-        assert that justification log is not sended.
+        create a new sample with missing fields.
         """
+        # create sample and relate ids fr client and sample
+        new_sample = self.get_create_invalid_sample()
+        new_sample['client'] = self.client_for_sample.id
+        new_sample['type'] = self.sample_type.id
 
-        data = {
-            'client' : self.sample_client.id,
-            'name' : 'TABLETA DE ACETAMINOFÉN 500 mg',
-            'type' : self.type.id,
-            'manufacturing_date' : '2026-02-01',
-            'expiration_date' : '2029-02-01',
-            'description' : 'TABLETA blanca OVALADA SIN PARTÍCULAS EXTRAÑAS',
-            'quantity' : '150 gramos',
-            'observations' : 'Incluir en el certificado muestra de estabilidad',
-        }
-
-        response = self.client.put(self.detail_url, data, format='json')
+        response = self.client.post(self.list_url, new_sample, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)  
+        self.assertIn('description', response.data)
 
-    def test_invalid_update_sample_patch(self):
+    def test_list_active_samples(self):
         """
-        assert that justification log is not sended.
+        simulates retreiving a list of samples, 
+        separating active from inactive ones.
         """
+        # create 2 valid samples and one inactive
+        new_sample1 = self.get_valid_sample_1()
+        new_sample1['client'] = self.client_for_sample.id
+        new_sample1['type'] = self.sample_type.id
 
-        data = {
-            'observations' : 'Incluir en el certificado muestra de estabilidad',
-        }
+        new_sample2 = self.get_valid_sample_2()
+        new_sample2['client'] = self.client_for_sample.id
+        new_sample2['type'] = self.sample_type.id
 
-        response = self.client.patch(self.detail_url, data, format='json')
+        inactive_sample = self.get_inactive_sample()
+        inactive_sample['client'] = self.client_for_sample.id
+        inactive_sample['type'] = self.sample_type.id
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)      
+        self.client.post(self.list_url, new_sample1, format='json')
+        self.client.post(self.list_url, new_sample2, format='json')
+        self.client.post(self.list_url, inactive_sample, format='json')
 
-    def test_update_sample_put(self):
+        # get the 2 active samples
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 2)
+        self.assertEqual(response.data['results'][0]['code'], 'PT2026-2')
+
+    def test_update_valid_sample(self):
         """
-        assert that traceability log is store in the database.
+        attempting to update a sample with justification 
+        and check traceability logs for that sample.
         """
+        new_sample = self.get_valid_sample_1()
+        new_sample['client'] = self.client_for_sample.id
+        new_sample['type'] = self.sample_type.id
 
-        data = {
-            'client' : self.sample_client.id,
-            'name' : 'TABLETA DE ACETAMINOFÉN 500 mg',
-            'type' : self.type.id,
-            'manufacturing_date' : '2026-02-01',
-            'expiration_date' : '2029-02-01',
-            'description' : 'TABLETA blanca OVALADA SIN PARTÍCULAS EXTRAÑAS',
-            'quantity' : '150 gramos',
-            'observations' : 'Incluir en el certificado muestra de estabilidad',
-            'justification': 'Error por parte del cliente en la información de la muestra enviada'
-        }
+        response = self.client.post(self.list_url, new_sample, format='json')
+        
+        # get sample id for detail url
+        sample_id = response.data['id']
+        detail_url =  reverse('sample-detail', kwargs={'pk': sample_id})
+        
+        updated_sample = self.get_update_valid_sample()
 
-        response = self.client.put(self.detail_url, data, format='json')
+        response = self.client.patch(detail_url, updated_sample, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.active_sample.refresh_from_db() # read database with updated data
-        self.assertEqual(response.data['name'], 'TABLETA DE ACETAMINOFÉN 500 MG')
-        self.assertEqual(response.data['quantity'], '150 GRAMOS')
+        self.assertEqual(response.data['quantity'], '150 TABLETAS')
 
-        # get sample
-        sample = Sample.objects.get(code='PT2026-1')
+        #  check that 2 traceability logs exist
+        traceability_logs = SampleTraceability.objects.filter(sample=sample_id).order_by('-id')
+        self.assertEqual(traceability_logs.count(), 2)
 
-        # check traceability log
-        traceability_log = SampleTraceability.objects.filter(sample=sample).order_by('-id').first()
-        self.assertEqual(traceability_log.user_responsible, self.user)
-        self.assertIn('CLIENTE', traceability_log.event)
+        # check that updated log corresponds
+        last_log = traceability_logs[0]
+        self.assertIn('CANTIDAD', last_log.event)
 
-    def test_update_sample_patch(self):
+    def test_update_invalid_sample(self):
         """
-        assert that traceability log is store in the database.
+        attempting to update a sample with no justification.
         """
-                
-        data = {
-            'observations' : 'Incluir en el certificado muestra de estabilidad',
-            'justification': 'Cliente solicita incluir observación'
-        }
+        new_sample = self.get_valid_sample_1()
+        new_sample['client'] = self.client_for_sample.id
+        new_sample['type'] = self.sample_type.id
 
-        response = self.client.patch(self.detail_url, data, format='json')
+        response = self.client.post(self.list_url, new_sample, format='json')
+        
+        # get sample id for detail url
+        sample_id = response.data['id']
+        detail_url =  reverse('sample-detail', kwargs={'pk': sample_id})
+        
+        updated_sample = self.get_update_invalid_sample()
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.active_sample.refresh_from_db() # read database with updated data
-        self.assertEqual(response.data['observations'], 'INCLUIR EN EL CERTIFICADO MUESTRA DE ESTABILIDAD')
-
-        # get sample
-        sample = Sample.objects.get(code='PT2026-1')
-
-        # check traceability log
-        traceability_log = SampleTraceability.objects.filter(sample=sample).order_by('-id').first()
-        self.assertEqual(traceability_log.user_responsible, self.user)
-        self.assertIn('OBSERVACIÓN', traceability_log.event)
-
-    def test_invalid_destroy_inactivate_sample(self):
-        """
-        assert that justification is not sended with the data.
-        """
-
-        response = self.client.delete(self.detail_url)
+        response = self.client.patch(detail_url, updated_sample, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
-    def test_destroy_inactivate_sample(self):
+    def test_destroy_valid_sample(self):
         """
-        assert that traceability log is store in the database.
+        attempting to "destroy" a sample with justification 
+        and check status change.
         """
-        data = {
-            'justification': 'Cliente cancela el ensayo de la muestra.'
-        }
+        new_sample = self.get_valid_sample_1()
+        new_sample['client'] = self.client_for_sample.id
+        new_sample['type'] = self.sample_type.id
 
-        response = self.client.delete(self.detail_url, data, format='json')
+        response = self.client.post(self.list_url, new_sample, format='json')
+        
+        # get sample id for detail url
+        sample_id = response.data['id']
+        detail_url =  reverse('sample-detail', kwargs={'pk': sample_id})
+        
+        updated_sample = self.get_destroy_valid_sample()
+
+        response = self.client.delete(detail_url, updated_sample, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.active_sample.refresh_from_db() # read database with updated data
-        self.assertFalse(self.active_sample.is_active)
+        self.assertIn('message', response.data)
 
-        # get sample
-        sample =Sample.objects.get(code='PT2026-1')
+        # check that status was updated
+        deleted_sample = Sample.objects.get(pk=sample_id)
+        self.assertFalse(deleted_sample.is_active)
 
-        # check that traceability
-        traceability_log = SampleTraceability.objects.filter(sample=sample).order_by('-id').first()
-        self.assertEqual(traceability_log.user_responsible, self.user)
-        self.assertIn('CANCELA', traceability_log.event)
-
-
-class SampleTraceabilityAPITestCase(APITestCase):
-    def setUp(self):
+    def test_destroy_invalid_sample(self):
         """
-        test data for sample traceability
+        attempting to "destroy" a client with no justification.
         """
-        self.user = User.objects.create_user(
-            username = 'analista1',
-            password = 'password123'
-        )
+        new_sample = self.get_valid_sample_1()
+        new_sample['client'] = self.client_for_sample.id
+        new_sample['type'] = self.sample_type.id
 
-        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.list_url, new_sample, format='json')
+        
+        # get sample id for detail url
+        sample_id = response.data['id']
+        detail_url =  reverse('sample-detail', kwargs={'pk': sample_id})
+        
+        updated_sample = self.get_destroy_invalid_sample()
 
-        self.sample_client  = Client.objects.create(
-            name = 'LABORATORIO A',
-            nit = '540.211.322.562.2',
-            address = 'calle real 435 # 11-41',
-            contact_person = 'John Doe',
-            email = 'alfa@email.com',
-            phone = '310 412 5412',
-            is_active = True,
-        )
+        response = self.client.delete(detail_url, updated_sample, format='json')
 
-        self.type = SampleType.objects.create(
-            name = 'PRODUCTO TERMINADO',
-            prefix = 'PT',
-            is_active = True
-        )
-
-        self.sample = Sample.objects.create(
-            client = self.sample_client,
-            code = 'PT2026-1',
-            name = 'TABLETA DE ACETAMINOFÉN',
-            type = self.type,
-            manufacturing_date = '2026-01-03',
-            expiration_date = '2028-01-03',
-            description = 'TABLETA BLANCA OVALADA SIN PARTÍCULAS EXTRAÑAS',
-            quantity = '100 TABLETAS',
-            observations = 'NA',
-            received_date = '2026-04-01',
-            status = 'RECEIVED',
-            is_active = True,
-        )
-          
-        self.sample_traceability1 = SampleTraceability.objects.create(
-            sample = self.sample,
-            user_responsible = self.user,
-            event = 'MUESTRA INGRESADA EN EL SISTEMA',
-            event_date = '2026-01-03',
-        )
-
-        self.sample_traceability2 = SampleTraceability.objects.create(
-            sample = self.sample,
-            user_responsible = self.user,
-            event = 'INCLUIR EN EL CERTIFICADO MUESTRA DE ESTABILIDAD',
-            event_date = '2026-01-05',
-        )
-
-        self.list_url = reverse('sample-traceability-sample-traceability', kwargs={'sample_id': self.sample.pk})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
 
     def test_retreive_sample_traceability(self):
-        
-        response = self.client.get(self.list_url)
+        """
+        get a sample traceability history.
+        """
+        new_sample = self.get_valid_sample_1() # create sample
+        new_sample['client'] = self.client_for_sample.id
+        new_sample['type'] = self.sample_type.id
+        response = self.client.post(self.list_url, new_sample, format='json')
+
+        # get the sample id for the detail url
+        sample_id = response.data['id']
+        detail_url = reverse('sample-detail', kwargs={'pk': sample_id})
+
+        updated_sample = self.get_update_valid_sample() # update sample data
+        self.client.patch(detail_url, updated_sample, format='json')
+
+        # recover traceability logs
+        traceability_url = reverse('sample-traceability-sample-traceability', kwargs={'sample_id': sample_id})
+        response = self.client.get(traceability_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 2)

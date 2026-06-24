@@ -9,7 +9,6 @@ class UserBaseAdminData(APITestCase):
     base class to create the test data for admin view 
     when creating, updating or inactivating users.
     """
-        
     def  get_valid_user(self):
         return {
             'first_name' : 'John',

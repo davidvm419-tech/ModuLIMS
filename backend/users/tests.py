@@ -13,7 +13,8 @@ TEST_MEDIA_ROOT = tempfile.mkdtemp()
 
 class UserAdminAPITestCase(UserBaseAdminData, APITestCase):
     """
-    test the Admin views endpoints to create, update and "delete" users.
+    test the Admin views endpoints to create, update, "delete" users.
+    And Retreive user traceability logs.
     """
     def setUp(self):
         self.admin_user = User.objects.create(

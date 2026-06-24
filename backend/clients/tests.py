@@ -11,7 +11,8 @@ User = get_user_model()
 
 class ClientAPITestCase(ClientBaseData, APITestCase):
     """
-    test the client views endpints to create, update and "delete" clients.
+    test the client views endpoints to create, update and "delete" clients.
+    And retreive client traceability logs.
     """
     def setUp(self):
         self.admin_user = User.objects.create(
@@ -37,7 +38,6 @@ class ClientAPITestCase(ClientBaseData, APITestCase):
         create a new valid client.
         """
         new_client = self.get_valid_client_1()
-        
         response = self.client.post(self.list_url, new_client, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -82,7 +82,7 @@ class ClientAPITestCase(ClientBaseData, APITestCase):
         self.client.post(self.list_url, second_client, format='json')
         self.client.post(self.list_url, inactive_client, format='json')
 
-        # get the 2 clients created
+        # get the 2 active clients
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
@@ -186,7 +186,6 @@ class ClientAPITestCase(ClientBaseData, APITestCase):
         detail_url = reverse('client-detail', kwargs={'pk': client_id})
 
         updated_client = self.get_update_valid_client() # update client
-
         self.client.patch(detail_url, updated_client, format='json')
 
         # recover traceability logs

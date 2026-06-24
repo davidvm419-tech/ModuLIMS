@@ -87,8 +87,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        queryset = self.get_queryset()
-        user = get_object_or_404(queryset, pk=pk)
+        user = self.get_object()
 
         # check that request is PATCH or PUT to use only one method
         partial = kwargs.pop('partial', False) or request.method == 'PATCH'
@@ -119,7 +118,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, pk=None, *args, **kwargs):
         """
         In this case we "delete" the data by updating the active status
         so the default behavior is overwrite
@@ -132,9 +131,10 @@ class UserAdminViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        user = self.get_object()
+
         try:
             with transaction.atomic():
-                user = self.get_object()
                 user.is_active = False
                 user.save()
 
@@ -189,8 +189,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        queryset = self.get_queryset()
-        user = get_object_or_404(queryset, pk=pk)
+        user = self.get_object()
   
         old_password = request.data.get('old_password', '').strip()
         new_password = request.data.get('new_password', '').strip()
@@ -201,7 +200,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
             try:
                 with transaction.atomic():
-                    
                     user = serializer.save()
                     
                     # check if user updates the password not only the sign

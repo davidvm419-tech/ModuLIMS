@@ -7,7 +7,6 @@ class SampleType(models.Model):
     prefix = models.CharField(max_length=10, unique=True)
     is_active = models.BooleanField(default=True)
 
-
     class Meta:
         ordering = ['name']
         verbose_name = 'Tipo de muestra'
