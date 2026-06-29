@@ -4,7 +4,7 @@ from django.utils import timezone
 from lims.constants import events_dict
 from .models import SampleType, Sample, SampleTraceability
 from .serializers import SampleTypeSerializer, SampleSerializer, SampleTraceabilitySerializer   
-from rest_framework import mixins, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -62,7 +62,7 @@ class SampleViewSet(viewsets.ModelViewSet):
     serializer_class = SampleSerializer
 
     def create(self, request, *args, **kwargs):
-        """"
+        """
         custom sample code to have category prefix-year-xxxx
         example: PT2026-1
         """
@@ -215,7 +215,7 @@ class SampleViewSet(viewsets.ModelViewSet):
 class SampleTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
     """
     This view will get the entire traceability endpoint for the frontend
-    api/traceability
+    api/sample-traceability
     for GET operations, editing and deleting is forbidden.
     """
     permission_classes = [IsAuthenticated]

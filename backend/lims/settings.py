@@ -70,7 +70,7 @@ INSTALLED_APPS = [
     'samples',
     'users',
     'clients',
-    'assays,'
+    'assays',
 ]
 
 MIDDLEWARE = [
