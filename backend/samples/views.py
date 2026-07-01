@@ -30,7 +30,7 @@ class SampleTypeViewSet(viewsets.ModelViewSet):
     serializer_class =SampleTypeSerializer
     pagination_class = None # pagination disabled for frontend selects when creating samples
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, pk=None):
         """
         In this case we "delete" the data by updating the active status
         so the default behavior is overwrite
@@ -116,7 +116,7 @@ class SampleViewSet(viewsets.ModelViewSet):
                         event = events_dict['sample_creation'],
                     )
 
-                    return Response(self.get_serializer(sample).data, status=status.HTTP_201_CREATED)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
                 
             except Exception as err:
                 return Response(
@@ -143,7 +143,7 @@ class SampleViewSet(viewsets.ModelViewSet):
         
         sample = self.get_object()
 
-        # check that request is PATCH or PUT to use only one method
+        # check that request is PATCH or PUT to use the corresponding method
         partial = kwargs.pop('partial', False) or request.method == 'PATCH'
         
         serializer = self.get_serializer(sample, data=request.data, partial=partial)
@@ -170,7 +170,7 @@ class SampleViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def destroy(self, request, pk=None, *args, **kwargs):
+    def destroy(self, request, pk=None):
         """
         In this case we "delete" the data by updating the active status
         and add a traceability log from the user to why this sample

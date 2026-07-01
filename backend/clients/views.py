@@ -46,7 +46,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                         event = events_dict['client_creation']
                     )
 
-                    return Response(self.get_serializer(client).data, status=status.HTTP_201_CREATED)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
             except Exception as err:
                 return Response(
@@ -98,7 +98,7 @@ class ClientViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, pk=None):
         """
         In this case we "delete" the data by updating the active status
         so the default behavior is overwrite

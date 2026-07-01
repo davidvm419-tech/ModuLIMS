@@ -65,7 +65,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
                         event = events_dict['user_creation']
                     )
 
-                    return Response(self.get_serializer(user).data, status=status.HTTP_201_CREATED)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
             except Exception as err:
                 return Response(
@@ -118,7 +118,7 @@ class UserAdminViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-    def destroy(self, request, pk=None, *args, **kwargs):
+    def destroy(self, request, pk=None):
         """
         In this case we "delete" the data by updating the active status
         so the default behavior is overwrite
@@ -168,7 +168,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     queryset =  User.objects.filter(is_active=True)
     serializer_class = UserProfileSerializer
 
-    http_method_names = ['get', 'patch', 'options',  'head', 'GET', 'PATCH', 'OPTIONS',  'HEAD']
+    http_method_names = ['get', 'patch', 'options', 'head']
         
     def partial_update(self, request, pk=None, *args, **kwargs):
         """
