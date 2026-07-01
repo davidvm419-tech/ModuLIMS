@@ -156,7 +156,7 @@ class AssayTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
 
     # decorator to tell DRF that use the global pagination and to add a custom readable url
     @action(detail=False, methods=['get'], url_path=r'assay/(?P<assay_id>\d+)')
-    def sample_traceability(self, request, assay_id=None):
+    def assay_traceability(self, request, assay_id=None):
         """
         The read only view set gives the predefined methods,
         here we get data by sample id thanks to that inheritance.
@@ -216,6 +216,7 @@ class SampleAssayViewSet(viewsets.ModelViewSet):
             # update data and create traceability log
             try:
                 with transaction.atomic():
+                    serializer.save()
                     
                     # get the sample traceability model from samples module
                     SampleTraceabilityModel = apps.get_model('samples', 'SampleTraceability')
@@ -226,8 +227,6 @@ class SampleAssayViewSet(viewsets.ModelViewSet):
                         user_responsible = request.user,
                         event = f"MODIFICACIÓN DE ENSAYO DE MUESTRA: {traceability_log}",
                     )
-
-                    serializer.save()
 
                     return Response(serializer.data, status=status.HTTP_200_OK)
             

@@ -175,7 +175,7 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         """
         create a new sample with missing fields.
         """
-        # create sample and relate ids fr client and sample
+        # create sample and relate ids for client and sample
         new_sample = self.get_create_invalid_sample()
         new_sample['client'] = self.client_for_sample.id
         new_sample['type'] = self.sample_type.id
@@ -235,7 +235,7 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['quantity'], '150 TABLETAS')
 
-        #  check that 2 traceability logs exist
+        # check that 2 traceability logs exist
         traceability_logs = SampleTraceability.objects.filter(sample=sample_id).order_by('-id')
         self.assertEqual(traceability_logs.count(), 2)
 
