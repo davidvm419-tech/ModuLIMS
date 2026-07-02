@@ -14,7 +14,7 @@ router.register(r'assays', AssayViewSet, basename='assay')
 # assays traceability urls
 router.register(r'assays-traceability', AssayTraceabilityViewSet, basename='assay-traceability')
 
-# sample assays  urls
+# sample assays urls
 router.register(r'samples-assays', SampleAssayViewSet, basename='sample-assay')
 
 

@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -64,9 +65,17 @@ class SampleViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """
         custom sample code to have category prefix-year-xxxx
-        example: PT2026-1
+        example: PT2026-1, when sample is created the assays are injected
+        into the sample assays table and then the code is assigned.
         """
         serializer = self.get_serializer(data=request.data)
+        assays_data = request.data.get('assays', [])
+
+        if len(assays_data) <= 0:
+            return Response(
+                {"error": 'La muestra debe tener al menos un ensayo'},
+                status=status.HTTP_400_BAD_REQUEST 
+            )
 
         if serializer.is_valid():
             # create code and traceability log
@@ -74,6 +83,22 @@ class SampleViewSet(viewsets.ModelViewSet):
                 # failsafe to avoid errant data when creating a new sample
                 with transaction.atomic():
                     sample = serializer.save()
+                    
+                    # assign sample assays
+                    '''
+                    add when assay module is implemented
+                    ''' 
+                    # get the sample assays model from assays module
+                    SampleAssayModel = apps.get_model('assays', 'SampleAssay')
+
+                    # insert the assays into the sample assays
+                    for item in  assays_data:
+                        SampleAssayModel.objects.create(
+                            sample=sample,
+                            assay_id=item['assay_id'],
+                            specification=item['specification'].strip(),
+                            units=item['units'].strip(),
+                        )
                     
                     # get date, and last valid sample
                     date =timezone.now()
@@ -103,11 +128,6 @@ class SampleViewSet(viewsets.ModelViewSet):
                     sample.code = f"{prefix}{year}-{next_code}"  
                     
                     sample.save()
-
-                    # assign sample assays
-                    '''
-                    add when assay module is implemented
-                    ''' 
 
                     # traceability log
                     SampleTraceability.objects.create(

@@ -53,6 +53,19 @@ class SampleBaseData(APITestCase):
             'description' : 'tableta blanca valada sin partículas extrañas',
             'quantity' : '100 tabletas',
             'observations' : 'na',
+            'assays' : [
+                {
+                    'assay_id' : 1,
+                    'specification' : '<=1000',
+                    'units' : 'UFC/mL',
+                },
+                {
+                    'assay_id' : 2,
+                    'specification' : '<=100',
+                    'units' : 'UFC/mL',
+                },
+
+            ],
         }
     
     def  get_valid_sample_2(self):
@@ -65,6 +78,19 @@ class SampleBaseData(APITestCase):
             'description' : 'liquido transparente sin partículas extrañas',
             'quantity' : '500 ml',
             'observations' : 'mantener en refrigeración y reprtar como producto terminado',
+            'assays' : [
+                {
+                    'assay_id' : 1,
+                    'specification' : '<=1000',
+                    'units' : 'UFC/mL',
+                },
+                {
+                    'assay_id' : 2,
+                    'specification' : '<=100',
+                    'units' : 'UFC/mL',
+                },
+
+            ],
         }
         
     def  get_inactive_sample(self):
@@ -77,6 +103,19 @@ class SampleBaseData(APITestCase):
             'description' : 'polvo blanco sin partículas extrañas',
             'quantity' : '100 gramos',
             'observations' : 'na',
+            'assays' : [
+                {
+                    'assay_id' : 1,
+                    'specification' : '<=1000',
+                    'units' : 'UFC/mL',
+                },
+                {
+                    'assay_id' : 2,
+                    'specification' : '<=100',
+                    'units' : 'UFC/mL',
+                },
+
+            ],
             'is_active': False,
         }
     
@@ -87,9 +126,10 @@ class SampleBaseData(APITestCase):
             'type' : 1,
             'manufacturing_date' : '2026-06-01',
             'expiration_date' : '2029-06-01',
-            'description' : '',
+            'description' : 'No reporta',
             'quantity' : '100 gramos',
-            'observations' : '',
+            'observations' : 'na',
+            'assays' : '',
         }
     
     def get_update_valid_sample(self):

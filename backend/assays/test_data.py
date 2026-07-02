@@ -75,39 +75,20 @@ class SampleAssayBaseData(APITestCase):
     base class to create the test data when 
     updating or deleting sample assays.
     """
-    
-    def get_valid_sample_assay1(self):
-        return {
-            'sample' : 1,
-            'assay' : 1,
-            'specification' : '<=1000',
-            'units' : 'UFC/mL',
-        }
-
-    def get_valid_sample_assay2(self):
-        return {
-            'sample' : 1,
-            'assay' : 2,
-            'specification' : '<=100',
-            'units' : 'UFC/mL',
-        }
-
     def get_update_valid_sample_assay(self):
         return {
-            'specification' : '<=1000',
-            'units' : 'UFC/g',
-            'justification' : 'Actualización de unidades por error en el envió del cliente.',
+            'specification' : '<=500',
+            'justification' : 'Actualización de especificación por error del cliente.',
         }
 
     def get_update_invalid_sample_assay(self):
         return {
-            'specification' : '<=1000',
-            'units' : 'UFC/g',
+            'specification' : '<=500',
         }
 
     def get_destroy_valid_sample_assay(self):
         return {
-            'justification' : 'Se elimina el análisis  de recuento por solicitud del cliente.'
+            'justification' : 'Se elimina el análisis de hongos y levaduras por solicitud del cliente.'
         }
 
     def get_destroy_invalid_sample_assay(self):

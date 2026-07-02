@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from .models import Assay,  AssayTraceability, SampleAssay
 from clients.models import Client
+from samples.models import SampleType, Sample, SampleTraceability
 from .test_data import AssayBaseData, SampleAssayBaseData
 
 
@@ -204,3 +205,162 @@ class SampleAssayAPITestCase(SampleAssayBaseData, APITestCase):
     test the sample assay views endpoints to update and delete any sample assay.
     And retreive sample traceability logs.
     """
+    def setUp(self):
+        """
+        In the set up is include a client, sample, sample type and  assay to use their ids
+        in the tests for t he database relationships.
+        """
+        self.admin_user = User.objects.create(
+            first_name = 'Peter',
+            last_name = 'Admin',
+            identification = '12954321789',
+            email = 'peter@test.com',
+            username = 'peter_admin',
+            job_title = 'Coordinador de Labratorio',
+            rol = 'LABORATORY COORDINATOR',
+        )
+
+        # save hashed password in database
+        self.admin_user.set_password('superpassword123')
+        self.admin_user.save()
+
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.client_for_sample = Client.objects.create(
+            name = 'LABORATORIO A',
+            nit = '540.211.322.562.2',
+            address = 'calle real 435 # 11-41',
+            contact_person = 'John Doe',
+            email = 'alfa@email.com',
+            phone = '310 412 5412',
+        )
+
+        self.sample_type = SampleType.objects.create(
+            name = 'PRODUCTO TERMINADO',
+            prefix = 'PT',
+        )
+
+        self.sample = Sample.objects.create(
+            client = self.client_for_sample,
+            name = 'TABLETA DE ACETAMINOFÉN',
+            type = self.sample_type,
+            manufacturing_date = '2026-01-03',
+            expiration_date = '2028-01-03',
+            description = 'TABLETA BLANCA OVALADA SIN PARTÍCULAS EXTRAÑAS',
+            quantity = '100 TABLETAS',
+            observations = 'NA',
+        )
+
+        self.assay1 = Assay.objects.create(
+            name = 'RECUENTO DE MICROORGANISMOS MESOFILOS AEROBIOS',
+            category = 'MICROBIOLOGY',
+            methodology = 'POS-M-001',
+            normative_reference = 'USP NF 61',
+        )
+
+        self.assay2 = Assay.objects.create(
+            name = 'RECUENTO DE HONGOS Y LEVADURAS',
+            category = 'MICROBIOLOGY',
+            methodology = 'POS-M-002',
+            normative_reference = 'USP NF 61',
+        )
+
+        self.sample_assay1 = SampleAssay.objects.create(
+            sample = self.sample,
+            assay = self.assay1,
+            specification = '<=1000',
+            units = 'UFC/mL',
+        )
+
+        self.sample_assay2 = SampleAssay.objects.create(
+            sample = self.sample,
+            assay = self.assay2,
+            specification = '<=100',
+            units = 'UFC/mL',
+        )
+        
+        self.list_url = reverse('sample-assay-list')
+        self.detail_url =  reverse('sample-assay-detail', kwargs={'pk': self.sample_assay1.pk})
+    
+    def test_list_sample_assays(self):
+        """
+        test that the list method returns the assays for a particular sample.
+        """
+        response = self.client.get(self.list_url, data={'sample_id': self.sample.pk}) # send the sample id in  the request
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_list_sample_assays_no_sample_id(self):
+        """
+        attempting to get assays with no sample id
+        """
+        response = self.client.get(self.list_url) # send the sample id in  the request
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+
+    def test_update_valid_sample_assay(self):
+        """
+        attempting to update a sample assay with justification 
+        and check traceability logs for that sample.
+        """
+        updated_assay = self.get_update_valid_sample_assay()
+
+        response = self.client.patch(self.detail_url, updated_assay, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['specification'], '<=500')
+
+        # check that 1 traceability logs exist 
+        # (because the sample was created manually not traceability log was created)
+        traceability_logs = SampleTraceability.objects.filter(sample=self.sample.id).order_by('-id')
+        self.assertEqual(traceability_logs.count(), 1)
+
+        log = traceability_logs[0]
+
+        # check that updated log corresponds
+        self.assertIn('ERROR', log.event)
+    
+    def test_update_invalid_sample_assay(self):
+        """
+        attempting to update a sample assay with no justification 
+        """
+        updated_assay = self.get_update_invalid_sample_assay()
+
+        response = self.client.patch(self.detail_url, updated_assay, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+    
+    def test_destroy_valid_assay(self):
+        """
+        attempting to delete an  assay with justification 
+        and check that was delete it and check that traceability log was created.
+        """
+        updated_assay = self.get_destroy_valid_sample_assay()
+
+        response = self.client.delete(self.detail_url, updated_assay, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('message', response.data)
+
+        # check that 1 traceability logs exist 
+        # (because the sample was created manually not traceability log was created)
+        traceability_logs = SampleTraceability.objects.filter(sample=self.sample.id).order_by('-id')
+        log = traceability_logs[0]
+        self.assertIn('ELIMINA', log.event)
+
+        # check sample has 1 assay
+        response = self.client.get(self.list_url, data={'sample_id': self.sample.pk})
+        self.assertEqual(len(response.data), 1)
+        print(response.data)
+
+    def test_destroy_invalid_assay(self):
+        """
+        attempting to delete an assay with no justification.
+        """
+        updated_assay = self.get_destroy_invalid_sample_assay()
+
+        response = self.client.delete(self.detail_url, updated_assay, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)

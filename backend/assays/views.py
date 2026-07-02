@@ -181,7 +181,7 @@ class AssayTraceabilityViewSet(viewsets.ReadOnlyModelViewSet):
 class SampleAssayViewSet(viewsets.ModelViewSet):
     """
     This view will get the entire user personal endpoint for the frontend
-    GET  /api/sample-assay/<int:id>/ (retrieve)
+    GET  /api/sample-assay/?sample_id=<int> (list)
     PATCH /api/sample-assay/<int:id>/ (partial_update)
     DELETE /api/sample-assay/int:id> (destroy)
     modelViewSet gives a template for the basic CRUD 
@@ -190,8 +190,28 @@ class SampleAssayViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = SampleAssay.objects.all()
     serializer_class = SampleAssaySerializer
+    pagination_class = None # pagination disabled for frontend, samples don't have more than 25 assays
 
     http_method_names = ['get', 'patch', 'delete', 'options', 'head']
+
+    def list(self, request):
+        """
+        Get all the assays for a particular sample requested 
+        from the query parameters.
+        """
+        sample_id = request.query_params.get('sample_id')
+
+        if not sample_id:
+            return Response(
+                {"error": 'La muestra solicitada no existe'},
+                status=status.HTTP_400_BAD_REQUEST 
+            )
+        
+        sample_assays = SampleAssay.objects.filter(sample=sample_id)
+
+        serializer = self.get_serializer(sample_assays, many=True)
+
+        return  Response(serializer.data, status=status.HTTP_200_OK)
 
     def partial_update(self, request, pk=None, *args, **kwargs):
         """

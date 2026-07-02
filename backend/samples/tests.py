@@ -145,6 +145,8 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
             prefix = 'PT',
         )
 
+        """add the assays here to test the assay creation"""
+
         self.list_url = reverse('sample-list')
 
     def test_create_sample(self):
@@ -292,7 +294,7 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
 
     def test_destroy_invalid_sample(self):
         """
-        attempting to "destroy" a client with no justification.
+        attempting to "destroy" a sample with no justification.
         """
         new_sample = self.get_valid_sample_1()
         new_sample['client'] = self.client_for_sample.id
