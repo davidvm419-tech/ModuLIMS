@@ -85,9 +85,6 @@ class SampleViewSet(viewsets.ModelViewSet):
                     sample = serializer.save()
                     
                     # assign sample assays
-                    '''
-                    add when assay module is implemented
-                    ''' 
                     # get the sample assays model from assays module
                     SampleAssayModel = apps.get_model('assays', 'SampleAssay')
 

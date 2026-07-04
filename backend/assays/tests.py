@@ -352,7 +352,6 @@ class SampleAssayAPITestCase(SampleAssayBaseData, APITestCase):
         # check sample has 1 assay
         response = self.client.get(self.list_url, data={'sample_id': self.sample.pk})
         self.assertEqual(len(response.data), 1)
-        print(response.data)
 
     def test_destroy_invalid_assay(self):
         """

@@ -22,7 +22,7 @@ class SampleAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'client', 'type', 'status', 'received_date', 'is_active')
     search_fields = ('code', 'name', 'client__name', 'description')
     list_filter = ('status', 'is_active', 'type', 'received_date')
-    readonly_fields = ('code', 'received_date')
+    readonly_fields = ('code', 'name', 'client', 'type', 'status', 'received_date', 'is_active')
     inlines = [SampleTraceabilityInline]
 
 

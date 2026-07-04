@@ -9,6 +9,7 @@ class ClientAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'identification', 'email', 'username', 'job_title', 'rol', 'is_active')
     search_fields = ('first_name', 'last_name', 'identification')
     list_filter = ('is_active',)
+    readonly_fields = ('first_name', 'last_name', 'identification', 'email', 'username', 'job_title', 'rol', 'is_active')
 
 
 class UserTraceabilityInline(admin.TabularInline):

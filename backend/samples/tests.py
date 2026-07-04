@@ -2,8 +2,9 @@ from django.contrib.auth import get_user_model # django will get the custom user
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from assays.models import Assay, SampleAssay
+from clients.models import Client 
 from .models import SampleType, Sample, SampleTraceability
-from clients.models import Client
 from .test_data import SampleTypeBaseData, SampleBaseData
 
 
@@ -145,37 +146,66 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
             prefix = 'PT',
         )
 
-        """add the assays here to test the assay creation"""
+        self.assay1 = Assay.objects.create(
+            name = 'RECUENTO DE MICROORGANISMOS MESOFILOS AEROBIOS',
+            category = 'MICROBIOLOGY',
+            methodology = 'POS-M-001',
+            normative_reference = 'USP NF 61',
+        )
 
+        self.assay2 = Assay.objects.create(
+            name = 'RECUENTO DE HONGOS Y LEVADURAS',
+            category = 'MICROBIOLOGY',
+            methodology = 'POS-M-002',
+            normative_reference = 'USP NF 61',
+        )
         self.list_url = reverse('sample-list')
 
     def test_create_sample(self):
         """
         create a new valid sample and check that a second sample creation 
-        gives the corresponding next code number.
+        gives the corresponding next code number
+        and check that assays were correctly saved.
         """
-        # create sample and relate ids for client and sample
+        # create sample and relate ids for client, sample type and assays
         new_sample = self.get_valid_sample_1()
         new_sample['client'] = self.client_for_sample.id
         new_sample['type'] = self.sample_type.id
+        new_sample['assays'][0]['assay_id'] = self.assay1.id
+        new_sample['assays'][1]['assay_id'] = self.assay2.id
 
         response = self.client.post(self.list_url, new_sample, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['code'], 'PT2026-1')
-        
+
+        #  check that assays were saved into the sample assays table
+        sample1_assays = SampleAssay.objects.filter(sample=response.data['id'])
+        self.assertEqual(sample1_assays.count(), 2) # check 2 assays created
+        assay1 = sample1_assays[0]
+        self.assertEqual(assay1.specification, '<=1000') # check specification of assay 1
+
         # create sample 2
         new_sample2 = self.get_valid_sample_2()
         new_sample2['client'] = self.client_for_sample.id
         new_sample2['type'] = self.sample_type.id
+        new_sample2['assays'][0]['assay_id'] = self.assay1.id
+        new_sample2['assays'][1]['assay_id'] = self.assay2.id
 
-        response = self.client.post(self.list_url, new_sample, format='json')
+        response = self.client.post(self.list_url, new_sample2, format='json')
 
         self.assertEqual(response.data['code'], 'PT2026-2')
+        
+        #  check that assays were saved into the sample assays table
+        sample2_assays = SampleAssay.objects.filter(sample=response.data['id'])
+        self.assertEqual(sample2_assays.count(), 2) # check 2 assays created
+        assay2 = sample2_assays[1]
+        self.assertEqual(assay2.specification, '<=100') # check specification of assay 2
 
     def test_create_invalid_sample(self):
         """
-        create a new sample with missing fields.
+        create a new sample with missing fields. 
+        Now is testing missing assays. Previous missing fields were tested.
         """
         # create sample and relate ids for client and sample
         new_sample = self.get_create_invalid_sample()
@@ -185,7 +215,7 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         response = self.client.post(self.list_url, new_sample, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('description', response.data)
+        self.assertIn('error', response.data)
 
     def test_list_active_samples(self):
         """
@@ -196,14 +226,20 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         new_sample1 = self.get_valid_sample_1()
         new_sample1['client'] = self.client_for_sample.id
         new_sample1['type'] = self.sample_type.id
+        new_sample1['assays'][0]['assay_id'] = self.assay1.id
+        new_sample1['assays'][1]['assay_id'] = self.assay2.id
 
         new_sample2 = self.get_valid_sample_2()
         new_sample2['client'] = self.client_for_sample.id
         new_sample2['type'] = self.sample_type.id
+        new_sample2['assays'][0]['assay_id'] = self.assay1.id
+        new_sample2['assays'][1]['assay_id'] = self.assay2.id
 
         inactive_sample = self.get_inactive_sample()
         inactive_sample['client'] = self.client_for_sample.id
         inactive_sample['type'] = self.sample_type.id
+        inactive_sample['assays'][0]['assay_id'] = self.assay1.id
+        inactive_sample['assays'][1]['assay_id'] = self.assay2.id
 
         self.client.post(self.list_url, new_sample1, format='json')
         self.client.post(self.list_url, new_sample2, format='json')
@@ -223,6 +259,8 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         new_sample = self.get_valid_sample_1()
         new_sample['client'] = self.client_for_sample.id
         new_sample['type'] = self.sample_type.id
+        new_sample['assays'][0]['assay_id'] = self.assay1.id
+        new_sample['assays'][1]['assay_id'] = self.assay2.id
 
         response = self.client.post(self.list_url, new_sample, format='json')
         
@@ -252,6 +290,8 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         new_sample = self.get_valid_sample_1()
         new_sample['client'] = self.client_for_sample.id
         new_sample['type'] = self.sample_type.id
+        new_sample['assays'][0]['assay_id'] = self.assay1.id
+        new_sample['assays'][1]['assay_id'] = self.assay2.id
 
         response = self.client.post(self.list_url, new_sample, format='json')
         
@@ -274,6 +314,8 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         new_sample = self.get_valid_sample_1()
         new_sample['client'] = self.client_for_sample.id
         new_sample['type'] = self.sample_type.id
+        new_sample['assays'][0]['assay_id'] = self.assay1.id
+        new_sample['assays'][1]['assay_id'] = self.assay2.id
 
         response = self.client.post(self.list_url, new_sample, format='json')
         
@@ -299,6 +341,8 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         new_sample = self.get_valid_sample_1()
         new_sample['client'] = self.client_for_sample.id
         new_sample['type'] = self.sample_type.id
+        new_sample['assays'][0]['assay_id'] = self.assay1.id
+        new_sample['assays'][1]['assay_id'] = self.assay2.id
 
         response = self.client.post(self.list_url, new_sample, format='json')
         
@@ -320,6 +364,8 @@ class SampleAPITestCase(SampleBaseData, APITestCase):
         new_sample = self.get_valid_sample_1() # create sample
         new_sample['client'] = self.client_for_sample.id
         new_sample['type'] = self.sample_type.id
+        new_sample['assays'][0]['assay_id'] = self.assay1.id
+        new_sample['assays'][1]['assay_id'] = self.assay2.id
         response = self.client.post(self.list_url, new_sample, format='json')
 
         # get the sample id for the detail url
