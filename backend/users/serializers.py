@@ -44,3 +44,12 @@ class UserTraceabilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTraceability
         fields = '__all__'
+
+
+class LoginSerializer(serializers.Serializer):
+    """
+    serializer to  check valid  data  coming 
+    from front end  when user tries to login.
+    """
+    username = serializers.CharField(max_length=80, write_only=True)
+    password = serializers.CharField(max_length=128, write_only=True)

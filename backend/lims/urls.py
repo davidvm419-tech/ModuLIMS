@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from rest_framework_simplejwt.views import   TokenRefreshView # default view to refresh token
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +25,7 @@ urlpatterns = [
     path('api/', include('users.urls')),
     path('api/', include('clients.urls')),
     path('api/', include('assays.urls')),
+    
+    #path  for JWT refreshing
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh')
 ]

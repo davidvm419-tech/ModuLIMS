@@ -1,12 +1,14 @@
+from django.contrib.auth import authenticate
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from lims.constants import events_dict
 from .models import User, UserTraceability
-from .serializers import UserAdminSerializer, UserProfileSerializer, UserTraceabilitySerializer    
+from .serializers import LoginSerializer, UserAdminSerializer, UserProfileSerializer, UserTraceabilitySerializer    
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 STANDARD_ERROR_MESSAGE = 'Se requiere de una justificación para modificar los datos del usuario.'
 
@@ -158,9 +160,10 @@ class UserAdminViewSet(viewsets.ModelViewSet):
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     """
-    This view will get the entire user personal endpoint for the frontend
+    This view will get the entire user personal endpoint for the frontend including user login
     GET  /api/user/<int:id>/ (retrieve)
     PATCH /api/user/<int:id>/ (partial_update)
+    POST /api/users/login/
     modelViewSet gives a template for the basic CRUD 
     and custom behavior for the desired methods.
     """
@@ -168,8 +171,42 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     queryset =  User.objects.filter(is_active=True)
     serializer_class = UserProfileSerializer
 
-    http_method_names = ['get', 'patch', 'options', 'head']
+    http_method_names = ['get', 'post', 'patch', 'options', 'head']
+
+    @action(detail=False, methods=['post'], permission_classes=[], serializer_class=LoginSerializer)
+    def login(self, request):
+        serializer = self.get_serializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {'error': 'credenciales de acceso incompletas'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
+        user = authenticate(
+            username=serializer.validated_data['username'], 
+            password=serializer.validated_data['password']
+        )
+        
+        # if user is inactive by default django returns a None user
+        if user is not None:
+            token = RefreshToken.for_user(user) # create the JWT  for user session
+
+            return Response({
+                'access': str(token.access_token), # token that changes every 10 minutes
+                'refresh': str(token), # token that expires after 30 minutes and session is closed
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'rol': user.rol,
+                }
+            })
+
+        return Response(
+            {'error': 'credenciales de acceso incorrectas o usuario inactivo contactese con el administrador para mas información'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
     def partial_update(self, request, pk=None, *args, **kwargs):
         """
         user can update password and sign if needed
