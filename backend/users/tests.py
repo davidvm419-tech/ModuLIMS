@@ -1,13 +1,11 @@
 from  datetime import timedelta
 from django.test import override_settings
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework import status
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework.test import APITestCase
 import shutil
 import tempfile
-from unittest.mock import patch
 from .models import User, UserTraceability
 from .test_data import UserBaseAdminData, UserBaseProfileData
 
@@ -280,34 +278,26 @@ class UserSelfUpdateAPITestCase(UserBaseProfileData, APITestCase):
 
     def test_access_token(self):
         """
-        login a valid user and check that the JWT is valid on the defined times.
+        login a valid user and check that the access JWT is valid on the defined times.
         """
         self.client.force_authenticate(user=None) # close set up session
 
-        data = {
-            'username': self.user.username,
-            'password': 'password123',
-        }
+        access_token = AccessToken.for_user(self.user) # create a token for the user
 
-        response = self.client.post(self.login_url, data, format='json')
+        access_token.set_exp(lifetime=timedelta(minutes=7)) # set a valid lifetime for this token
+
+        valid_access_token = str(access_token)
+
+        self.client.credentials(HTTP_AUTHORIZATION=F"Bearer {valid_access_token}") # add the token to user credentials
         
-        access_token = response.data['access'] # get the access token
+        response = self.client.get(self.url_detail)
 
-        # create a dummy time
-        valid_time_change = timezone.now() + timedelta(minutes=7)
-
-        # here the fake timelaps for the token refresh is created for a valid response
-        with patch('django.utils.timezone.now', return_value=valid_time_change):
-
-            self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}") # add the token to user credentials
-            response = self.client.get(self.url_detail)
-
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertEqual(response.data['username'], self.user.username)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], self.user.username)
     
     def test_invalid_access_token(self):
         """
-        login a valid user and check that the JWT is invalid on the defined times.
+        login a valid user and check that the access JWT is invalid on the defined times.
         """
         self.client.force_authenticate(user=None) # close set up session
         
@@ -325,33 +315,47 @@ class UserSelfUpdateAPITestCase(UserBaseProfileData, APITestCase):
         
     def test_refresh_token(self):
         """
-        login a valid user and check that the JWT is valid on the defined times.
-        Also test that is not valid anymore.
+        login a valid user and check that the refresh JWT is valid on the defined times.
         """
         self.client.force_authenticate(user=None) # close set up session
 
-        data = {
-            'username': self.user.username,
-            'password': 'password123',
-        }
+        refresh_token = RefreshToken.for_user(self.user) # create a token for the user
 
-        response = self.client.post(self.login_url, data, format='json')
-        
-        refresh_token = response.data['refresh'] # get the refresh token
+        refresh_token.set_exp(lifetime=timedelta(minutes=25)) # set a valid lifetime for this token
 
-        time_change = timezone.now() + timedelta(minutes=25) # create a dummy time during  the valid period
+        valid_refresh_token = str(refresh_token)
 
-        # here the fake timelaps for the token refresh is created
-        with patch('django.utils.timezone.now', return_value=time_change):
+        refresh_url = reverse('token_refresh') # url for the refresh token
 
-            refresh_url = reverse('token_refresh')
-            data = {'refresh': refresh_token}
+        data = {'refresh': valid_refresh_token} # send the token on request body
 
-            response = self.client.post(refresh_url, data, format='json')
+        response = self.client.post(refresh_url, data, format='json')
 
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # ensuring both tokens are returned for the token rotation configuration
+        self.assertIn('refresh', response.data)
+        self.assertIn('access', response.data)
+    
+    def test_invalid_refresh_token(self):
+        """
+        login a valid user and check that the refresh JWT is invalid on the defined times.
+        """
+        self.client.force_authenticate(user=None) # close set up session
 
-            self.assertIn('refresh', response.data)
+        refresh_token = RefreshToken.for_user(self.user) # create a token for the user
+
+        refresh_token.set_exp(lifetime=-timedelta(minutes=32)) # set a invalid lifetime for this token
+
+        valid_refresh_token = str(refresh_token)
+
+        refresh_url = reverse('token_refresh') # url for the refresh token
+
+        data = {'refresh': valid_refresh_token} # send the token on request body
+
+        response = self.client.post(refresh_url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('token_not_valid', response.data['code'])
 
     def test_update_password(self):
         """
