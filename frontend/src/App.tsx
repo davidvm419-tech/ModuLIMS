@@ -1,7 +1,7 @@
 import './index.css'
 import {Routes, Route, Navigate} from 'react-router-dom';
 
-import Login from './assets/features/auth/Login'
+import Login from './assets/features/users/Login'
 
 function App() {
   return (
