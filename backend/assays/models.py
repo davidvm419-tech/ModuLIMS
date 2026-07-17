@@ -16,7 +16,7 @@ class Assay(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'ensayos'
+        verbose_name = 'ensayo'
 
     def __str__(self):
         return f"{self.name}-{self.methodology}"

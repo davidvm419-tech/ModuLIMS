@@ -203,7 +203,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             })
 
         return Response(
-            {'error': 'credenciales de acceso incorrectas o usuario inactivo contactese con el administrador para mas información'},
+            {'error': 'credenciales de acceso incorrectas o usuario inactivo, contactese con el administrador para mas información'},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
