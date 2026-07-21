@@ -1,9 +1,12 @@
 // hooks  imports
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "../context/AuthContext";
 
 // components imports
 import AlertMessages from "../ui/AlertMessages";
+import Loading from "../ui/Loading";
+import Footer from "../ui/Footer";
 
 // interface and types imports
 import type { LoginData } from "../../interfaces/users";
@@ -22,6 +25,9 @@ export default function Login(){
         username: '',
         password: '',
     });
+
+    // login method from context
+    const { login } = useAuth()
 
     const formChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setUserData({
@@ -72,8 +78,7 @@ export default function Login(){
                     content: 'Bienvenido de vuelta',
                 })
 
-                // temporal,  add the logic to handle userdata
-                console.log(data)
+                login(data) // send data to local storage thanks to the context
 
                 // set timeout to redirect to user main page
                 setTimeout(() => {
@@ -158,12 +163,8 @@ export default function Login(){
             </p>
         </div>
 
-        <footer className="mt-auto pt-12 text-center text-xs text-gray-500">
-            <div className="border-t border-interactive/10 pt-6">
-                <p>© {new Date().getFullYear()} Microbial Systems. Todos los derechos reservados.</p>
-                <p className="mt-1 text-gray-400">ModuLims - Laboratory Information Management System v1.0</p>
-            </div>
-            </footer>
+        <Footer/>
+
       </div>
     );
 }
