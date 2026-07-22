@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // state for user
     const isAuthenticated = !!user;
+
     // check for saved tokens in local storage
     useEffect(()=>{
         const token =  localStorage.getItem('token');
@@ -37,11 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []); 
 
     // when user logs in save data in localstorage
-    const login = (autData: UserLogin) => {
-        localStorage.setItem('token', autData.access);
-        localStorage.setItem('refreshToken', autData.refresh);
-        localStorage.setItem('user', JSON.stringify(autData.user));
-        setUser(autData.user);
+    const login = (authData: UserLogin) => {
+        localStorage.setItem('accessToken', authData.access);
+        localStorage.setItem('refreshToken', authData.refresh);
+        localStorage.setItem('user', JSON.stringify(authData.user));
+        setUser(authData.user);
     };
 
     //  clean session of storage if te user logs out and redirect to login
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function  useAuth() {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new  Error('useAuth must be used with an AuthPRovider');
+        throw new  Error('useAuth must be used with an AuthProvider');
     }
     return context;
 }

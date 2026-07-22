@@ -16,7 +16,7 @@ export default function MainDashboard() {
             <h1>Here you  will find a dashboard!</h1>
             <p>{user?.id}</p>
             <p>{user?.username}</p>
-            <p>{user?.rol}</p>
+            <p>{user?.role}</p>
             <button onClick={logout}>Cerrar Sesión</button>
             <Footer/>
         </div>

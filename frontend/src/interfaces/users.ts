@@ -6,7 +6,7 @@ export interface LoginData {
 export interface UserProfile {
     id:  number;
     username: string;
-    rol: string;
+    role: string;
 }
 
 export interface UserLogin {
